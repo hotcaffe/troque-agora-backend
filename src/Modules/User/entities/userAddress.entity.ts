@@ -4,10 +4,10 @@ import { User } from "./user.entity";
 @Entity('enderecoUsuario')
 export class UserAddress {
     @PrimaryGeneratedColumn()
-    id_enderecoUsuario: number;
+    id_enderecoUsuario?: number;
 
     @PrimaryColumn()
-    id_usuario: number;
+    id_usuario?: number;
     
     @Column({length: 60, nullable: false})
     vc_lougradouro: string;
@@ -29,5 +29,5 @@ export class UserAddress {
 
     @ManyToOne(() => User, user => user.userAddress)
     @JoinColumn({name: 'id_usuario'})
-    user: User;
+    user?: User;
 }

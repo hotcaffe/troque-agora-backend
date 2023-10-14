@@ -5,7 +5,7 @@ import { UserReview } from "./userReview.entity";
 @Entity('usuario')
 export class User {
     @PrimaryGeneratedColumn()
-    id_usuario: number;
+    id_usuario?: number;
 
     @Column({length: 120, nullable: false})
     vc_nome: string;
@@ -23,8 +23,8 @@ export class User {
     vc_email: string;
 
     @OneToMany(() => UserAddress, userAddress => userAddress.user)
-    userAddress: UserAddress[];
+    userAddress?: UserAddress[];
 
     @OneToOne(() => UserReview, userReview => userReview.user)
-    userReview: UserReview;
+    userReview?: UserReview;
 }

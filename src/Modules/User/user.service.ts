@@ -1,66 +1,148 @@
-import { HttpException, HttpStatus, Injectable, Inject } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Inject, NotFoundException, Res } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { Repository } from 'typeorm';
+import {  Repository } from 'typeorm';
 import { UserAddress } from './entities/userAddress.entity';
 import { UserReview } from './entities/userReview.entity';
+import { HttpService } from '@nestjs/axios';
+import { lastValueFrom } from 'rxjs';
+import { Keycloak } from 'src/Services/keycloak/keycloak';
+import {decode} from 'jsonwebtoken'
+
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     @InjectRepository(UserAddress) private readonly userAddressRepository: Repository<UserAddress>,
-    @InjectRepository(UserReview) private readonly userReviewRepository: Repository<UserReview>
+    @InjectRepository(UserReview) private readonly userReviewRepository: Repository<UserReview>,
+    private readonly httpService: HttpService,
+    private keycloakService: Keycloak
   ){}
 
-  login({username, password}: CreateUserDto) {
-    if (!(username && password)) {
-      throw new HttpException("Usuário e senha devem ser informados!", HttpStatus.BAD_REQUEST);
-    }
-    return 'This action adds a new user';
+  errorHandler(error: any) {
+    const message = error.response?.data || "Erro interno ao criar usuário!"
+    const status = error.response?.status || 500;
+    throw new HttpException(message, status)
   }
 
-  async create({username, password}: CreateUserDto) {
-    // this.userReviewRepository.insert({
-    //   id_usuario: 3
-    // })
-    // this.userAddressRepository.insert({
-    //   id_usuario: 1,
-    //   in_numero: 5,
-    //   vc_bairro: 'Centro',
-    //   vc_complemento: 'Em frente o X',
-    //   vc_estado: 'Paraná',
-    //   vc_cidade: 'Mandaguari',
-    //   vc_lougradouro: 'Rua talhe'
-    // })
-    // this.userRepository.insert({
-    //   in_celular: 44997621072,
-    //   in_cpf: 11843781930,
-    //   in_idade: 22,
-    //   vc_email: 'raphaelfusco@gmail.com',
-    //   vc_nome: 'Raphael'
-    // })
-    const test = await this.userRepository.find({
-      where: {
-        id_usuario: 3
-      },
-      relations: {
-        userAddress: true,
-        userReview: true
+  async login(username: string, password: string): Promise<{access_token: string; refresh_token: string}> {
+    try {
+      return await this.keycloakService.loginUser(username, password);
+    } catch (error) {
+      const status = error.response?.status || 500;
+      if (status === 400 || status === 401) {
+        return {access_token: "", refresh_token: ""}
       }
-    })
-    return test
+      this.errorHandler(error)
+    }
+  }
+
+  async refreshSession(refresh_token: string) {
+    try {
+      return await this.keycloakService.refreshUserSession(refresh_token);
+    } catch (error) {
+      const status = error.response?.status || 500;
+      if (status === 400 || status === 401) {
+        return {access_token: "", refresh_token: ""}
+      }
+      this.errorHandler(error)
+    }
+  }
+
+  async logout(access_token: string) {
+    try {
+      const {session_state} = decode(access_token) as any;
+      return await this.keycloakService.logoutUser(session_state)
+    } catch (error) {
+      const status = error.response?.status || 500;
+      if (status === 400 || status === 401) {
+        return {access_token: "", refresh_token: ""}
+      }
+      this.errorHandler(error)
+    }
+  }
+
+  async create({username, password}: CreateUserDto, UserPersonalData: User, UserAddress: UserAddress, ) {
+    try {
+      //validar se o cpf já está cadastrado na base de dados
+      await this.keycloakService.createUser(UserPersonalData.vc_nome, UserPersonalData.vc_email, username, password);
+      const {id_usuario} = await this.userRepository.insert(UserPersonalData).then(res => res?.identifiers[0])
+      if (!id_usuario) throw Error("Não foi possível criar o usuário!")
+      await this.userAddressRepository.insert({...UserAddress, id_usuario})
+      await this.userReviewRepository.insert({id_usuario})
+      await this.keycloakService.updateUserAttributes(username, {id_usuario})
+      //send mail to confirm user email;
+    } catch (error: any) {
+      this.errorHandler(error);
+    }
+
   }
   
-
-  findAll() {
-    return [{}];
+  async updateUserReview(id_usuario: number, qt_trocasSucedidas?: number, qt_trocasRecebidas?: number, qt_trocasAceitas?: number, qt_trocasRecusadas?: number, qt_trocasEnviadas?: number) {
+    
   }
 
-  findOne(username: string) {
-    return `This action returns a #${username} user`;
+  async findAll(page?: number) {
+    try {
+      if (page) {
+        const take = 20;
+        const skip = (page - 1) * take;
+        return await this.userRepository.find({
+          relations: {
+            userAddress: true,
+            userReview: true
+          },
+          take,
+          skip
+        });
+      } else {
+        return await this.userRepository.find({
+          relations: {
+            userAddress: true,
+            userReview: true
+          }
+        });
+      }
+    } catch (error) {
+      this.errorHandler(error)
+    }
+  }
+
+  async findOne(id_usuario: number) {
+    try {
+      return await this.userRepository.findOne({
+        where: {
+          id_usuario
+        },
+        relations: {
+          userAddress: true,
+          userReview: true
+        }
+      })
+    } catch (error) {
+      this.errorHandler(error);
+    }
+  }
+
+  async findOneByUsername(username: string) {
+    try {
+      const id_usuario = await this.keycloakService.findUser(username).then(res => res?.attributes?.id_usuario[0]);
+      if (!id_usuario) throw new NotFoundException("Usuário não encontrado!");
+      return await this.userRepository.findOne({
+        where: {
+          id_usuario
+        },
+        relations: {
+          userAddress: true,
+          userReview: true
+        }
+      })
+    } catch (error) {
+      this.errorHandler(error);
+    }
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {

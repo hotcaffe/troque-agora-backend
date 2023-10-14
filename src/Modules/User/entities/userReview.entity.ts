@@ -32,5 +32,5 @@ export class UserReview {
 
     @OneToOne(() => User, user => user.id_usuario)
     @JoinColumn({name: 'id_usuario'})
-    user: User;
+    user?: User;
 } 

@@ -5,9 +5,12 @@ import { UserModule } from './modules/User/user.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import {  join } from 'path';
 import {ConfigModule} from '@nestjs/config'
+import { Keycloak } from './Services/keycloak/keycloak';
+import { HttpModule } from '@nestjs/axios';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
-  imports: [UserModule, ConfigModule.forRoot(), TypeOrmModule.forRoot({
+  imports: [UserModule, HttpModule, CacheModule.register(), ConfigModule.forRoot(), TypeOrmModule.forRoot({
     type: 'postgres',
     host: process.env.PG_HOST,
     port: Number(process.env.PG_PORT),
@@ -18,6 +21,6 @@ import {ConfigModule} from '@nestjs/config'
     synchronize: true
   })],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, Keycloak],
 })
 export class AppModule {}
