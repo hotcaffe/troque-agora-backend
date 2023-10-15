@@ -23,6 +23,7 @@ export class UserService {
   ){}
 
   errorHandler(error: any) {
+    if (error instanceof HttpException) throw error
     const message = error.response?.data || "Erro interno ao criar usuário!"
     const status = error.response?.status || 500;
     throw new HttpException(message, status)
@@ -81,8 +82,29 @@ export class UserService {
 
   }
   
-  async updateUserReview(id_usuario: number, qt_trocasSucedidas?: number, qt_trocasRecebidas?: number, qt_trocasAceitas?: number, qt_trocasRecusadas?: number, qt_trocasEnviadas?: number) {
-    
+  async updateAvaliacaoGeral(id_usuario: number) {
+    try {
+      const userReview = await this.userReviewRepository.findOne({
+        where: {
+          id_usuario
+        }
+      })
+
+      if (!userReview) throw new NotFoundException("User not found!")
+
+      const newAvaliacaoGeral = userReview.qt_trocasAceitas ? userReview.qt_trocasSucedidas / userReview.qt_trocasAceitas : 0;
+
+      await this.userReviewRepository.update(
+        {
+          id_usuario
+        },
+        {
+          tx_avaliacaoGeral: newAvaliacaoGeral
+        }
+      )
+    } catch (error) {
+      this.errorHandler(error)
+    }
   }
 
   async findAll(page?: number) {
@@ -145,11 +167,11 @@ export class UserService {
     }
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
+  // update(id: number, updateUserDto: UpdateUserDto) {
+  //   return `This action updates a #${id} user`;
+  // }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
-  }
+  // remove(id: number) {
+  //   return `This action removes a #${id} user`;
+  // }
 }
