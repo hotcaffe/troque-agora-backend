@@ -6,9 +6,7 @@ import { User } from './entities/user.entity';
 import {  Repository } from 'typeorm';
 import { UserAddress } from './entities/userAddress.entity';
 import { UserReview } from './entities/userReview.entity';
-import { HttpService } from '@nestjs/axios';
-import { lastValueFrom } from 'rxjs';
-import { Keycloak } from 'src/Services/keycloak/keycloak';
+import { Keycloak } from '../../Services/keycloak/keycloak';
 import {decode} from 'jsonwebtoken'
 
 
@@ -18,13 +16,12 @@ export class UserService {
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     @InjectRepository(UserAddress) private readonly userAddressRepository: Repository<UserAddress>,
     @InjectRepository(UserReview) private readonly userReviewRepository: Repository<UserReview>,
-    private readonly httpService: HttpService,
     private keycloakService: Keycloak
   ){}
 
   errorHandler(error: any) {
     if (error instanceof HttpException) throw error
-    const message = error.response?.data || "Erro interno ao criar usuário!"
+    const message = error.response?.data || error
     const status = error.response?.status || 500;
     throw new HttpException(message, status)
   }
@@ -70,11 +67,12 @@ export class UserService {
     try {
       //validar se o cpf já está cadastrado na base de dados
       await this.keycloakService.createUser(UserPersonalData.vc_nome, UserPersonalData.vc_email, username, password);
-      const {id_usuario} = await this.userRepository.insert(UserPersonalData).then(res => res?.identifiers[0])
+      const {id_usuario} = await this.userRepository.insert(UserPersonalData)?.then(res => res?.identifiers[0])
       if (!id_usuario) throw Error("Não foi possível criar o usuário!")
       await this.userAddressRepository.insert({...UserAddress, id_usuario})
       await this.userReviewRepository.insert({id_usuario})
       await this.keycloakService.updateUserAttributes(username, {id_usuario})
+      return;
       //send mail to confirm user email;
     } catch (error: any) {
       this.errorHandler(error);
@@ -171,7 +169,13 @@ export class UserService {
   //   return `This action updates a #${id} user`;
   // }
 
-  // remove(id: number) {
-  //   return `This action removes a #${id} user`;
-  // }
+  async remove(username: string) {
+    try {
+      const keycloakUserID = await this.keycloakService.findUser(username).then(res => res?.id);
+      if (!keycloakUserID) throw new NotFoundException("Usuário não encontrado!");
+      return await this.keycloakService.deleteUser(keycloakUserID);
+    } catch (error) {
+      this.errorHandler(error)
+    }
+  }
 }

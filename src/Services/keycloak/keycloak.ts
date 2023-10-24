@@ -131,4 +131,15 @@ export class Keycloak {
             }
         )).then(res => res.data)
     }
+
+    async deleteUser(userID: number) {
+        const clientToken = await this.auth();
+        return await lastValueFrom(this.httpService.delete(this.keycloakURL + "/admin/realms/troque-agora/users/" + userID, 
+            {
+                headers: {
+                    Authorization: `Bearer ${clientToken}`
+                }
+            }
+        ))
+    }
 }

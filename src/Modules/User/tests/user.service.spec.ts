@@ -1,145 +1,180 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from '../user.service';
-import { HttpException } from '@nestjs/common';
-import { getRepositoryToken } from '@nestjs/typeorm';
+import { HttpException, NotFoundException } from '@nestjs/common';
+import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { User } from '../entities/user.entity';
 import { Repository } from 'typeorm';
 import { UserAddress } from '../entities/userAddress.entity';
 import { UserReview } from '../entities/userReview.entity';
+import { HttpModule, HttpService } from '@nestjs/axios';
+import { Keycloak } from '../../../Services/keycloak/keycloak';
+import { CacheModule } from '@nestjs/cache-manager';
+import { ConfigModule } from '@nestjs/config';
+import { join, resolve } from 'path';
+import { decode } from 'jsonwebtoken';
 
 describe('UserService', () => {
   let service: UserService;
+  let httpService: HttpService;
+  let keycloakService: Keycloak;
+  let chacheModule: CacheModule;
   let userRepository: Repository<User>
   let userAddressRepository: Repository<UserAddress>
   let userReviewRepository: Repository<UserReview>
 
-  beforeEach(async () => {
+  const fakeUser = {
+    username: "raphael",
+    password: "S3nha_t3st3",
+    personalData: {
+      vc_nome: "Raphael Fusco",
+      in_cpf: 99999999999,
+      in_celular: 44999999999,
+      in_idade: 22,
+      vc_email: "raphaelfusco@gmail.com",
+    },
+    address: {
+      vc_lougradouro: "Rua X",
+      in_numero: 999,
+      vc_complemento: "Em frente ao Y",
+      vc_bairro: "Centro",
+      vc_cidade: "Mandaguari",
+      vc_estado: "Paraná"
+    }
+  }
+
+  beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        HttpModule, 
+        ConfigModule.forRoot({envFilePath: resolve(__dirname, 'test.env')}), 
+        TypeOrmModule.forRoot({
+          type: 'postgres',
+          host: process.env.PG_HOST,
+          port: Number(process.env.PG_PORT),
+          database: process.env.PG_DATABASE,
+          username: process.env.PG_USER,
+          password: process.env.PG_PASSWORD,
+          entities: [join(__dirname, '..', '**', '*.entity.{ts,js}')],
+          synchronize: true
+        }), 
+        TypeOrmModule.forFeature([User, UserAddress, UserReview]),
+        CacheModule.register()
+      ],
       providers: [
-        UserService, 
-        {
-          provide: getRepositoryToken(User),
-          useValue: {
-            create: jest.fn(),
-            find: jest.fn()
-          }
-        },
-        {
-          provide: getRepositoryToken(UserAddress),
-          useValue: {
-            create: jest.fn()
-          }
-        },
-        {
-          provide: getRepositoryToken(UserReview),
-          useValue: {
-            create: jest.fn()
-          }
-        }
+        UserService,
+        Keycloak
       ],
     }).compile();
 
     service = module.get<UserService>(UserService);
+    keycloakService = module.get<Keycloak>(Keycloak);
+    httpService = module.get<HttpService>(HttpService);
+    chacheModule = module.get<CacheModule>(CacheModule);
     userRepository = module.get<Repository<User>>(getRepositoryToken(User));
     userAddressRepository = module.get<Repository<UserAddress>>(getRepositoryToken(UserAddress));
     userReviewRepository = module.get<Repository<UserReview>>(getRepositoryToken(UserReview));
+
+    try {
+      await service.remove(fakeUser.username)
+    } catch (error) {
+      if (!(error instanceof NotFoundException)) {
+        console.log(error)
+        throw error
+      };
+    }
+
+    await expect(service.create({username: fakeUser.username, password: fakeUser.password}, fakeUser.personalData, fakeUser.address)).resolves.not.toThrow()
   });
 
-  const username = "raphael";
-  const password = "S3nha_t3st3";
-
-  const personalData = {
-    vc_nome: "Raphael Fusco",
-    in_cpf: 99999999999,
-    in_celular: 44999999999,
-    in_idade: 22,
-    vc_email: "raphaelfusco@gmail.com",
-  }
-
-  const address = {
-    vc_lougradouro: "Rua X",
-    in_numero: 999,
-    vc_complemento: "Em frente ao Y",
-    vc_bairro: "Centro",
-    vc_cidade: "Mandaguari",
-    vc_estado: "Paraná"
-  }
+  afterAll(async () => {
+    try {
+      await service.remove(fakeUser.username)
+    } catch (error) {
+      if (!(error instanceof NotFoundException)) {
+        console.log(error)
+        throw error
+      };
+    }
+  })
 
   it("should be defined", () => {
     expect(service).toBeDefined();
+    expect(keycloakService).toBeDefined();
+    expect(chacheModule).toBeDefined();
+    expect(httpService).toBeDefined();
     expect(userRepository).toBeDefined();
     expect(userAddressRepository).toBeDefined();
     expect(userReviewRepository).toBeDefined();
+    expect(process.env.KEYCLOAK_URL).toBe("http://localhost:8080/")
   })
   
   describe("Login", () => {
-    it("shouldn't be possible to login without username and password", async () => {
-      const userMockedFind = [
-        {
-          id_usuario: 3,
-          vc_nome: "Raphael",
-          in_cpf: 11843781930,
-          in_celular: 44997621072,
-          in_idade: 22,
-          vc_email: "raphaelfusco@gmail.com",
-          userAddress: [
-            {
-              id_enderecoUsuario: 3,
-              id_usuario: 3,
-              vc_lougradouro: "Rua talhe",
-              in_numero: 5,
-              vc_complemento: "Em frente o X",
-              vc_bairro: "Centro",
-              vc_cidade: "Mandaguari",
-              vc_estado: "Paraná"
-            },
-            {
-              id_enderecoUsuario: 4,
-              id_usuario: 3,
-              vc_lougradouro: "Rua talhe",
-              in_numero: 5,
-              vc_complemento: "Em frente o X",
-              vc_bairro: "Centro",
-              vc_cidade: "Mandaguari",
-              vc_estado: "Paraná"
-            }
-          ],
-          userReview: {
-            id_usuario: 3,
-            qt_trocasSucedidas: 0,
-            qt_trocasRecebidas: 0,
-            qt_trocasAceitas: 0,
-            qt_trocasRecusadas: 0,
-            qt_trocasEnviadas: 0,
-            bo_seloAtivo: false,
-            tx_avaliacaoGeral: 0.000
-          }
-        }
-      ];
+    // const userMockedFind = [
+    //   {
+    //     id_usuario: 3,
+    //     vc_nome: "Raphael",
+    //     in_cpf: 11843781930,
+    //     in_celular: 44997621072,
+    //     in_idade: 22,
+    //     vc_email: "raphaelfusco@gmail.com",
+    //     userAddress: [
+    //       {
+    //         id_enderecoUsuario: 3,
+    //         id_usuario: 3,
+    //         vc_lougradouro: "Rua talhe",
+    //         in_numero: 5,
+    //         vc_complemento: "Em frente o X",
+    //         vc_bairro: "Centro",
+    //         vc_cidade: "Mandaguari",
+    //         vc_estado: "Paraná"
+    //       },
+    //       {
+    //         id_enderecoUsuario: 4,
+    //         id_usuario: 3,
+    //         vc_lougradouro: "Rua talhe",
+    //         in_numero: 5,
+    //         vc_complemento: "Em frente o X",
+    //         vc_bairro: "Centro",
+    //         vc_cidade: "Mandaguari",
+    //         vc_estado: "Paraná"
+    //       }
+    //     ],
+    //     userReview: {
+    //       id_usuario: 3,
+    //       qt_trocasSucedidas: 0,
+    //       qt_trocasRecebidas: 0,
+    //       qt_trocasAceitas: 0,
+    //       qt_trocasRecusadas: 0,
+    //       qt_trocasEnviadas: 0,
+    //       bo_seloAtivo: false,
+    //       tx_avaliacaoGeral: 0.000
+    //     }
+    //   }
+    // ];
 
-      jest.spyOn(userRepository, 'create').mockReturnValueOnce(personalData)
-      jest.spyOn(userRepository, 'find').mockReturnValueOnce(
-        Promise.resolve(userMockedFind)
-      )
-      expect(service.create({username, password}, personalData, address)).resolves
-  
-      const usernameLogin = ""
-      const passwordLogin = ""
-
-      try {
-        service.login({username: usernameLogin, password: passwordLogin});
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpException)
-      }
-    });
+    // beforeEach(() => {
+    //   jest.spyOn(userRepository, 'create').mockReturnValueOnce(personalData)
+    //   jest.spyOn(userRepository, 'find').mockReturnValueOnce(
+    //     Promise.resolve(userMockedFind)
+    //   )
+    //   jest.spyOn(userRepository, 'insert').mockReturnValueOnce(Promise.resolve({
+    //     identifiers: userMockedFind
+    //   }) as any)
+    // })
   
     it('should return invalid username and password on every unsucessfull login', async () => {
       const usernameLogin = ""
       const passwordLogin = ""
-  
-      expect(service.create({username, password}, personalData, address)).resolves
-      await expect(service.login({username: usernameLogin, password: passwordLogin})).rejects.toBeInstanceOf(HttpException)
+
+      await expect(service.login(usernameLogin, passwordLogin)).resolves.toEqual({access_token: "", refresh_token: ""})
     });
+
+    it('should be possible to login with username and password', async () => {
+      const userTokens = await service.login(fakeUser.username, fakeUser.password);
+      const [access_token, refresh_token] = [decode(userTokens.access_token), decode(userTokens.refresh_token)] as any;
+      expect(access_token?.jti).not.toBe("");
+      expect(refresh_token?.jti).not.toBe("");
+    })
   })
 
   // describe("Create User", () => {
