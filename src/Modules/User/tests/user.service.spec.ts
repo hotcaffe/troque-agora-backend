@@ -30,7 +30,7 @@ describe('UserService', () => {
       in_cpf: 99999999999,
       in_celular: 44999999999,
       in_idade: 22,
-      vc_email: "raphaelfusco@gmail.com",
+      vc_email: "raphaelmockteste@gmail.com",
     },
     address: {
       vc_lougradouro: "Rua X",
@@ -73,17 +73,6 @@ describe('UserService', () => {
     userRepository = module.get<Repository<User>>(getRepositoryToken(User));
     userAddressRepository = module.get<Repository<UserAddress>>(getRepositoryToken(UserAddress));
     userReviewRepository = module.get<Repository<UserReview>>(getRepositoryToken(UserReview));
-
-    try {
-      await service.remove(fakeUser.username)
-    } catch (error) {
-      if (!(error instanceof NotFoundException)) {
-        console.log(error)
-        throw error
-      };
-    }
-
-    await expect(service.create({username: fakeUser.username, password: fakeUser.password}, fakeUser.personalData, fakeUser.address)).resolves.not.toThrow()
   });
 
   afterAll(async () => {
@@ -109,58 +98,18 @@ describe('UserService', () => {
   })
   
   describe("Login", () => {
-    // const userMockedFind = [
-    //   {
-    //     id_usuario: 3,
-    //     vc_nome: "Raphael",
-    //     in_cpf: 11843781930,
-    //     in_celular: 44997621072,
-    //     in_idade: 22,
-    //     vc_email: "raphaelfusco@gmail.com",
-    //     userAddress: [
-    //       {
-    //         id_enderecoUsuario: 3,
-    //         id_usuario: 3,
-    //         vc_lougradouro: "Rua talhe",
-    //         in_numero: 5,
-    //         vc_complemento: "Em frente o X",
-    //         vc_bairro: "Centro",
-    //         vc_cidade: "Mandaguari",
-    //         vc_estado: "Paraná"
-    //       },
-    //       {
-    //         id_enderecoUsuario: 4,
-    //         id_usuario: 3,
-    //         vc_lougradouro: "Rua talhe",
-    //         in_numero: 5,
-    //         vc_complemento: "Em frente o X",
-    //         vc_bairro: "Centro",
-    //         vc_cidade: "Mandaguari",
-    //         vc_estado: "Paraná"
-    //       }
-    //     ],
-    //     userReview: {
-    //       id_usuario: 3,
-    //       qt_trocasSucedidas: 0,
-    //       qt_trocasRecebidas: 0,
-    //       qt_trocasAceitas: 0,
-    //       qt_trocasRecusadas: 0,
-    //       qt_trocasEnviadas: 0,
-    //       bo_seloAtivo: false,
-    //       tx_avaliacaoGeral: 0.000
-    //     }
-    //   }
-    // ];
-
-    // beforeEach(() => {
-    //   jest.spyOn(userRepository, 'create').mockReturnValueOnce(personalData)
-    //   jest.spyOn(userRepository, 'find').mockReturnValueOnce(
-    //     Promise.resolve(userMockedFind)
-    //   )
-    //   jest.spyOn(userRepository, 'insert').mockReturnValueOnce(Promise.resolve({
-    //     identifiers: userMockedFind
-    //   }) as any)
-    // })
+    beforeAll(async () => {
+      try {
+        await service.remove(fakeUser.username)
+      } catch (error) {
+        if (!(error instanceof NotFoundException)) {
+          console.log(error)
+          throw error
+        };
+      }
+  
+      await expect(service.create({username: fakeUser.username, password: fakeUser.password}, fakeUser.personalData, fakeUser.address)).resolves.not.toThrow()
+    })
   
     it('should return invalid username and password on every unsucessfull login', async () => {
       const usernameLogin = ""
@@ -177,129 +126,167 @@ describe('UserService', () => {
     })
   })
 
-  // describe("Create User", () => {
-  //   it("shouldn't be possible to create new user without informing username and password", async () => {
-  //     const username = ""
-  //     const password = ""
-  
-  //     await expect(service.create({username, password}, personalData, address)).rejects.toBeInstanceOf(HttpException);
-  
-  //   })
-  
-  //   it("shouldn't be possible to create new user without informing all his personal data", async () => {
-  //     const personalData = {
-  //       vc_nome: "",
-  //       in_cpf: null,
-  //       in_celular: null,
-  //       in_idade: null,
-  //       vc_email: "",
-  //     }
-  
-  //     await expect(service.create({username, password}, personalData, address)).rejects.toBeInstanceOf(HttpException);
-  
-  //   })
-  
-  //   it("Shouldn't be possible to create new user without informing his address", async () => {
-  //     const address = {
-  //       vc_lougradouro: "",
-  //       in_numero: null,
-  //       vc_complemento: "",
-  //       vc_bairro: "",
-  //       vc_cidade: "",
-  //       vc_estado: ""
-  //     }
-  
-  //     await expect(service.create({username, password}, personalData, address)).rejects.toBeInstanceOf(HttpException);
-  //   })
-  
-  //   it("Shouldn't be possible to create a user with a password without numbers", async () => {
-  //     const username = "raphael";
-  //     const password = "Senha_teste";
-  
-  //     await expect(service.create({username, password}, personalData, address)).rejects.toBeInstanceOf(HttpException);
-  //   })
-  
-  //   it("Shouldn't be possible to create a user with a less then 8 characters password", async () => {
-  //     const username = "raphael";
-  //     const password = "Senha_1";
-  
-  //     await expect(service.create({username, password}, personalData, address)).rejects.toBeInstanceOf(HttpException);
-  //   })
-  
-  //   it("Shouldn't be possible to create a user with a password without special symbols", async () => {
-  //     const username = "raphael";
-  //     const password = "Senha99teste";
-  
-  //     await expect(service.create({username, password}, personalData, address)).rejects.toBeInstanceOf(HttpException);
-  //   })
-  
-  //   it("Shouldn't be possible to create a user with a password without capital letter", async () => {
-  //     const username = "raphael";
-  //     const password = "senha99_teste";
-  
-  //     await expect(service.create({username, password}, personalData, address)).rejects.toBeInstanceOf(HttpException);
-  //   })
-  
-  //   it("Shouldn't be possible to create a user with a less then 6 characters username", async () => {
-  //     const username = "rapha";
-  //     const password = "Senha99_teste";
-  
-  //     await expect(service.create({username, password}, personalData, address)).rejects.toBeInstanceOf(HttpException);
-  //   })
-  
-  //   it("Shouldn't be possible to create a user with an existent username", async () => {
-  //     expect(service.create({username, password}, personalData, address)).resolves ;
-  
-  //     const username2 = "raphael";
-  //     const password2 = "Senha99_teste";
-  
-  //     await expect(service.create({username: username2, password: password2}, personalData, address)).rejects.toBeInstanceOf(HttpException)
-  //   })
-  // })
+  describe("Create User", () => {
+    afterEach(async () => {
+      try {
+        await service.remove(fakeUser.username)
+      } catch (error) {
+        if (!(error instanceof NotFoundException)) {
+          console.log(error)
+          throw error
+        };
+      }
+    })
 
-  // describe("Find user", () => {
-  //   it("Should return list of users, when listing all users", async () => {
-  //     const result = await service.findAll();
-  //     expect(Array.isArray(result)).toBeTruthy();
-  //     expect(result[0]).toHaveBeenCalledWith(
-  //       expect.objectContaining({
-  //         id: expect.any(Number),
-  //         vc_nome: expect.any(String),
-  //         in_cpf: expect.any(String),
-  //         in_celular: expect.any(String),
-  //         in_idade: expect.any(Number),
-  //         vc_email: expect.any(String),
-  //         userAddress: expect.any(Array),
-  //         userReview: expect.any(Object)
-  //       })
-  //     )
-  //   })
+    it("shouldn't be possible to create new user without informing username and password", async () => {
+      const username = ""
+      const password = ""
   
-  //   it("Should return just one user, when listing one user", async () => {
-  //     const result = await service.findOne("raphael");
-  //     expect(Array.isArray(result)).toBeFalsy();
-  //     expect(result).toHaveBeenCalledWith(
-  //       expect.objectContaining({
-  //         id: expect.any(Number),
-  //         vc_nome: expect.any(String),
-  //         in_cpf: expect.any(String),
-  //         in_celular: expect.any(String),
-  //         in_idade: expect.any(Number),
-  //         vc_email: expect.any(String),
-  //         userAddress: expect.any(Array),
-  //         userReview: expect.any(Object)
-  //       })
-  //     )
-  //   })
-  // })
+      await expect(service.create({username, password}, fakeUser.personalData, fakeUser.address)).rejects.toBeInstanceOf(HttpException);
+  
+    })
+  
+    it("shouldn't be possible to create new user without informing all his personal data", async () => {
+      const personalData = {
+        vc_nome: "",
+        in_cpf: null,
+        in_celular: null,
+        in_idade: null,
+        vc_email: "",
+
+      }
+  
+      await expect(service.create({username: fakeUser.username, password: fakeUser.password}, personalData, fakeUser.address)).rejects.toBeInstanceOf(HttpException);
+  
+    })
+  
+    it("Shouldn't be possible to create new user without informing his address", async () => {
+      const address = {
+        vc_lougradouro: "",
+        in_numero: null,
+        vc_complemento: "",
+        vc_bairro: "",
+        vc_cidade: "",
+        vc_estado: ""
+      }
+  
+      await expect(service.create({username: fakeUser.username, password: fakeUser.password}, fakeUser.personalData, address)).rejects.toBeInstanceOf(HttpException);
+    })
+  
+    it("Shouldn't be possible to create a user with a password without numbers", async () => {
+      const username = "raphael";
+      const password = "Senha_teste";
+  
+      await expect(service.create({username, password}, fakeUser.personalData, fakeUser.address)).rejects.toBeInstanceOf(HttpException);
+    })
+  
+    it("Shouldn't be possible to create a user with a less then 8 characters password", async () => {
+      const username = "raphael";
+      const password = "Senha_1";
+  
+      await expect(service.create({username, password}, fakeUser.personalData, fakeUser.address)).rejects.toBeInstanceOf(HttpException);
+    })
+  
+    it("Shouldn't be possible to create a user with a password without special symbols", async () => {
+      const username = "raphael";
+      const password = "Senha99teste";
+  
+      await expect(service.create({username, password}, fakeUser.personalData, fakeUser.address)).rejects.toBeInstanceOf(HttpException);
+    })
+  
+    it("Shouldn't be possible to create a user with a password without capital letter", async () => {
+      const username = "raphael";
+      const password = "senha99_teste";
+  
+      await expect(service.create({username, password}, fakeUser.personalData, fakeUser.address)).rejects.toBeInstanceOf(HttpException);
+    })
+  
+    it("Shouldn't be possible to create a user with a less then 6 characters username", async () => {
+      const username = "rapha";
+      const password = "Senha99_teste";
+  
+      await expect(service.create({username, password}, fakeUser.personalData, fakeUser.address)).rejects.toBeInstanceOf(HttpException);
+    })
+  
+    it("Shouldn't be possible to create a user with an existent username", async () => {
+      await expect(service.create({username: fakeUser.username, password: fakeUser.password}, fakeUser.personalData, fakeUser.address)).resolves.not.toThrow();
+
+      const username2 = "raphael";
+      const password2 = "Senha99_teste";
+  
+      await expect(service.create({username: username2, password: password2}, fakeUser.personalData, fakeUser.address)).rejects.toBeInstanceOf(HttpException)
+    })
+  })
+
+  describe("Find user", () => {
+    beforeAll(async () => {
+      try {
+        await service.remove(fakeUser.username)
+      } catch (error) {
+        if (!(error instanceof NotFoundException)) {
+          console.log(error)
+          throw error
+        };
+      }
+  
+      await expect(service.create({username: fakeUser.username, password: fakeUser.password}, fakeUser.personalData, fakeUser.address)).resolves.not.toThrow()
+    })
+
+    it("Should return list of users, when listing all users", async () => {
+      const result = await service.findAll();
+      expect(Array.isArray(result)).toBeTruthy();
+      expect(result[0]).toEqual(
+        expect.objectContaining({
+          id_usuario: expect.any(Number),
+          vc_nome: expect.any(String),
+          in_cpf: expect.any(String),
+          in_celular: expect.any(String),
+          in_idade: expect.any(Number),
+          vc_email: expect.any(String),
+          userAddress: expect.any(Array),
+          userReview: expect.any(Object)
+        })
+      )
+    })
+  
+    it("Should return just one user, when listing one user", async () => {
+      const userByUsername = await service.findOneByUsername("raphael");
+      expect(userByUsername).toEqual(
+        expect.objectContaining({
+          id_usuario: expect.any(Number),
+          vc_nome: expect.any(String),
+          in_cpf: expect.any(String),
+          in_celular: expect.any(String),
+          in_idade: expect.any(Number),
+          vc_email: expect.any(String),
+          userAddress: expect.any(Array),
+          userReview: expect.any(Object)
+        })
+      )
+      const userById = await service.findOne(userByUsername.id_usuario);
+      expect(Array.isArray(userById)).toBeFalsy();
+      expect(userById).toEqual(
+        expect.objectContaining({
+          id_usuario: expect.any(Number),
+          vc_nome: expect.any(String),
+          in_cpf: expect.any(String),
+          in_celular: expect.any(String),
+          in_idade: expect.any(Number),
+          vc_email: expect.any(String),
+          userAddress: expect.any(Array),
+          userReview: expect.any(Object)
+        })
+      )
+    })
+  })
 
   // describe("Update User", () => {
   //   it("Should be possible to update user review status", async () => {
-  //     service.create({username, password}, personalData, address)
+  //     service.create({username: fakeUser.username, password: fakeUser.password}, fakeUser.personalData, fakeUser.address)
   //     const [id_usuario, qt_trocasSucedidas, qt_trocasRecebidas, qt_trocasAceitas, qt_trocasRecusadas, qt_trocasEnviadas] = [1, 2, 2, 3, 4, 4]
-  //     expect(await service.updateUserReview(id_usuario, qt_trocasSucedidas, qt_trocasRecebidas, qt_trocasAceitas, qt_trocasRecusadas, qt_trocasEnviadas)).resolves;
-  //     expect(await service.updateUserReview(id_usuario, qt_trocasSucedidas, qt_trocasRecebidas, qt_trocasAceitas, qt_trocasRecusadas, qt_trocasEnviadas)).resolves;
-  //     expect(service.findOne(username)).resolves.toHaveBeenCalledWith(
+  //     expect(await service.updateAvaliacaoGeral(id_usuario)).resolves;
+  //     expect(await service.updateAvaliacaoGeral(id_usuario)).resolves;
+  //     expect(service.findOneByUsername(fakeUser.username)).resolves.toHaveBeenCalledWith(
   //       expect.objectContaining({
   //         qt_trocasSucedidas: 2 + 2,
   //         qt_trocasRecebidas: 2 + 2,

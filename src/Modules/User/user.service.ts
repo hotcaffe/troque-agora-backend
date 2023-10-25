@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable, Inject, NotFoundException, Res } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Inject, NotFoundException, Res, ForbiddenException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -64,6 +64,8 @@ export class UserService {
   }
 
   async create({username, password}: CreateUserDto, UserPersonalData: User, UserAddress: UserAddress, ) {
+    if (username?.length < 6) throw new ForbiddenException("O nome de usuário deve ter ou ser maior que 6 caracteres")
+
     try {
       //validar se o cpf já está cadastrado na base de dados
       await this.keycloakService.createUser(UserPersonalData.vc_nome, UserPersonalData.vc_email, username, password);
