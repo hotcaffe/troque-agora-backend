@@ -26,6 +26,34 @@ export class UserService {
     throw new HttpException(message, status)
   }
 
+  validaCPF(cpf: string) {
+    if (cpf?.length != 11) return false;
+    if (cpf === '00000000000') return false;
+
+    const cpfArray = cpf.split("").map(digit => Number(digit));
+    const nineDigitsSum = cpfArray.slice(0, 9).reduce((oldDigit, curDigit, index) => {
+      const multiplier = 10 - index;
+      if (index === 1) return (oldDigit * 10) + (curDigit * multiplier)
+      return oldDigit + (curDigit * multiplier)
+    })
+    const nineDigitsMod = ((nineDigitsSum * 10) % 11);
+    const firstVerifyDigit = nineDigitsMod === 10 ? cpfArray[9] === 0 : nineDigitsMod === cpfArray[9];
+    
+    if (firstVerifyDigit) {
+      const tenDigitsSum = cpfArray.slice(0, 10).reduce((oldDigit, curDigit, index) => {
+        const multiplier = 11 - index;
+        if (index === 1) return (oldDigit * 11) + (curDigit * multiplier)
+        return oldDigit + (curDigit * multiplier)
+      })
+      const tenDigitsMod = ((tenDigitsSum * 10) % 11);
+      const secondVerifyDigit = tenDigitsMod === 10 ? cpfArray[10] === 0 : tenDigitsMod === cpfArray[10];
+
+      return secondVerifyDigit;
+    }
+
+    return false;
+  }
+
   async login(username: string, password: string): Promise<{access_token: string; refresh_token: string}> {
     try {
       return await this.keycloakService.loginUser(username, password);
@@ -66,8 +94,17 @@ export class UserService {
   async create({username, password}: CreateUserDto, UserPersonalData: User, UserAddress: UserAddress, ) {
     if (username?.length < 6) throw new ForbiddenException("O nome de usuário deve ter ou ser maior que 6 caracteres")
 
+    if(!this.validaCPF(String(UserPersonalData?.in_cpf))) throw new ForbiddenException("O CPF do usuário é inválido!")
+
     try {
-      //validar se o cpf já está cadastrado na base de dados
+      const cpfAlreadyExists = await this.userRepository.find({
+        where: {
+          in_cpf: UserPersonalData.in_cpf
+        }
+      }).then(users => !!users.length);
+
+      if (cpfAlreadyExists) throw new ForbiddenException("O CPF do usuário já está cadastrado em outra conta!")
+
       await this.keycloakService.createUser(UserPersonalData.vc_nome, UserPersonalData.vc_email, username, password);
       const {id_usuario} = await this.userRepository.insert(UserPersonalData)?.then(res => res?.identifiers[0])
       if (!id_usuario) throw Error("Não foi possível criar o usuário!")
