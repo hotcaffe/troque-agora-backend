@@ -58,6 +58,10 @@ export class UserService {
     try {
       return await this.keycloakService.loginUser(username, password);
     } catch (error) {
+      const isNotFullySetupMessage = error.response.data?.error_description;
+      if (isNotFullySetupMessage) {
+        throw new HttpException("Antes de realizar o login, por favor, verifique seu e-mail!", HttpStatus.UNAUTHORIZED);
+      }
       const status = error.response?.status || 500;
       if (status === 400 || status === 401) {
         return {access_token: "", refresh_token: ""}
@@ -79,11 +83,13 @@ export class UserService {
   }
 
   async logout(access_token: string) {
+    if (!access_token) return;
     try {
       const {session_state} = decode(access_token) as any;
       return await this.keycloakService.logoutUser(session_state)
     } catch (error) {
       const status = error.response?.status || 500;
+      console.log(error)
       if (status === 400 || status === 401) {
         return {access_token: "", refresh_token: ""}
       }
@@ -106,13 +112,14 @@ export class UserService {
       if (cpfAlreadyExists) throw new ForbiddenException("O CPF do usuário já está cadastrado em outra conta!")
 
       await this.keycloakService.createUser(UserPersonalData.vc_nome, UserPersonalData.vc_email, username, password);
+      
       const {id_usuario} = await this.userRepository.insert(UserPersonalData)?.then(res => res?.identifiers[0])
       if (!id_usuario) throw Error("Não foi possível criar o usuário!")
       await this.userAddressRepository.insert({...UserAddress, id_usuario})
       await this.userReviewRepository.insert({id_usuario})
       await this.keycloakService.updateUserAttributes(username, {id_usuario})
+      await this.keycloakService.sendVerifyEmail(username);
       return;
-      //send mail to confirm user email;
     } catch (error: any) {
       this.errorHandler(error);
     }
@@ -210,9 +217,23 @@ export class UserService {
 
   async remove(username: string) {
     try {
-      const keycloakUserID = await this.keycloakService.findUser(username).then(res => res?.id);
-      if (!keycloakUserID) throw new NotFoundException("Usuário não encontrado!");
-      return await this.keycloakService.deleteUser(keycloakUserID);
+      const {keycloakID, id_usuario} = await this.keycloakService.findUser(username).then(res => ({keycloakID: res?.id, id_usuario: res?.attributes?.id_usuario[0]}));
+      if (!keycloakID && !id_usuario) throw new NotFoundException("Usuário não encontrado!");
+      if (id_usuario) {
+        await this.userAddressRepository.delete({
+          id_usuario: id_usuario
+        })
+        await this.userReviewRepository.delete({
+          id_usuario: id_usuario
+        })
+        await this.userRepository.delete({
+          id_usuario: id_usuario
+        })
+      }
+      if (keycloakID) {
+        await this.keycloakService.deleteUser(keycloakID);
+      }
+      return;
     } catch (error) {
       this.errorHandler(error)
     }

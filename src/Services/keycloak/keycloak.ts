@@ -46,7 +46,9 @@ export class Keycloak {
                     type: "password",
                     value: password,
                     temporary: false
-                }]
+                }],
+                enabled: true,
+                requiredActions: []
             },
             {
                 headers: {
@@ -134,7 +136,20 @@ export class Keycloak {
 
     async deleteUser(userID: number) {
         const clientToken = await this.auth();
-        return await lastValueFrom(this.httpService.delete(this.keycloakURL + "/admin/realms/troque-agora/users/" + userID, 
+        return await lastValueFrom(this.httpService.delete(this.keycloakURL + "admin/realms/troque-agora/users/" + userID, 
+            {
+                headers: {
+                    Authorization: `Bearer ${clientToken}`
+                }
+            }
+        ))
+    }
+
+    async sendVerifyEmail(username: string) {
+        const clientToken = await this.auth();
+        const {id} = await this.findUser(username);
+
+        return await lastValueFrom(this.httpService.put(this.keycloakURL + "admin/realms/troque-agora/users/" + id + "/send-verify-email", {},
             {
                 headers: {
                     Authorization: `Bearer ${clientToken}`
