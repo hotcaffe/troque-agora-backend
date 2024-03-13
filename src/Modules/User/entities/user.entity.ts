@@ -1,6 +1,8 @@
 import { Column, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { UserAddress } from "./userAddress.entity";
 import { UserReview } from "./userReview.entity";
+import { Notice } from "src/Modules/Notice/entities/notice.entity";
+import { Proposal } from "src/Modules/Proposal/entities/proposal.entity";
 
 @Entity('usuario')
 export class User {
@@ -27,4 +29,10 @@ export class User {
 
     @OneToOne(() => UserReview, userReview => userReview.user)
     userReview?: UserReview;
+
+    @OneToMany(() => Notice, userNotices => userNotices.user)
+    userNotices?: Notice[];
+
+    @OneToMany(() => Proposal, userProposals => userProposals.user)
+    userProposals?: Proposal[]
 }
