@@ -1,5 +1,5 @@
-import { Notice } from "src/Modules/Notice/entities/notice.entity";
-import { ProposalItem } from "src/Modules/Proposal/entities/proposalItem.entity";
+import { Notice } from "src/Modules/notice/entities/notice.entity";
+import { ProposalItem } from "src/Modules/proposal/entities/proposalItem.entity";
 import { Column, Entity, JoinColumn, ManyToOne, Not, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('categoria')

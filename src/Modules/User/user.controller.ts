@@ -3,25 +3,18 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
   UsePipes,
   ValidationPipe,
   Query,
   ParseIntPipe,
-  Header,
-  Headers,
   Res,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { User } from './entities/user.entity';
-import { UserAddress } from './entities/userAddress.entity';
 import { CreateUserAddressDto } from './dto/create-user-address-dto';
 import { CreateUserPersonalDataDto } from './dto/create-user-personal.dto';
-import { IsNotEmpty } from 'class-validator';
 import { QueryRequired } from 'src/Decorators/query-required/query-required.decorator';
 import {Response} from 'express';
 import { Cookies } from 'src/Decorators/cookies/cookies.decorator';

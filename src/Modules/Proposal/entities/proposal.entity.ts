@@ -1,4 +1,4 @@
-import { User } from "src/modules/User/entities/user.entity";
+import { User } from "src/modules/user/entities/user.entity";
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
 import { ProposalNotices } from "./proposalNotices.entity";
 import { ProposalItem } from "./proposalItem.entity";

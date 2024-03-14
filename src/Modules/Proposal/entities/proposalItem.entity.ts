@@ -1,12 +1,10 @@
-import { Notice } from "src/Modules/Notice/entities/notice.entity";
-import { User } from "src/modules/User/entities/user.entity";
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
 import { Proposal } from "./proposal.entity";
-import { Category } from "src/Modules/Category/entities/category.entity";
+import { Category } from "src/Modules/category/entities/category.entity";
 
 @Entity('itemProposta')
 export class ProposalItem {
-    @PrimaryColumn()
+    @PrimaryGeneratedColumn()
     id_detalheProposta: number;
     
     @PrimaryColumn()
@@ -21,7 +19,7 @@ export class ProposalItem {
     @Column({length: 128, nullable: false})
     vc_descricao: string;
 
-    @Column({type: 'number', nullable: false, precision: 15})
+    @Column("decimal", {nullable: false, precision: 15})
     fl_quantidade: number;
     
     @Column({length: 4, nullable: false})
@@ -34,10 +32,10 @@ export class ProposalItem {
     id_categoria: number
 
     @ManyToOne(() => Proposal, proposal => proposal.proposalItems)
-    @JoinColumn([{name: 'id_usuarioProposta'}, {name: 'id_propostaTroca'}])
+    @JoinColumn([{name: 'id_usuarioProposta', referencedColumnName: 'id_usuarioProposta'}, {name: 'id_propostaTroca', referencedColumnName: 'id_propostaTroca'}])
     proposal: Proposal;
 
     @ManyToOne(() => Category, category => category.proposalItem)
     @JoinColumn({name: 'id_categoria'})
-    category: number;
+    category: Category;
 }

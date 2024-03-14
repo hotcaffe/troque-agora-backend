@@ -1,8 +1,8 @@
-import { Category } from "src/Modules/Category/entities/category.entity";
-import { User } from "src/modules/User/entities/user.entity";
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
+import { Category } from "src/Modules/category/entities/category.entity";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
 import { NoticeDetails } from "./noticeDetails.entity";
-import { ProposalNotices } from "src/Modules/Proposal/entities/proposalNotices.entity";
+import { ProposalNotices } from "src/Modules/proposal/entities/proposalNotices.entity";
+import { User } from "src/modules/user/entities/user.entity";
 
 @Entity('anuncioTroca')
 export class Notice {
@@ -21,13 +21,13 @@ export class Notice {
     @Column({length: 256, nullable: false})
     vc_descricao: string;
 
-    @Column({type: 'number', nullable: false, precision: 15})
+    @Column("decimal", {nullable: false, precision: 15})
     fl_quantidade: number;
 
     @Column({length: 4, nullable: false})
     ch_unidade: string;
 
-    @Column({type: 'number', nullable: false, precision: 14})
+    @Column("decimal", {nullable: false, precision: 14})
     vl_preco: number;
 
     @Column({length: 32, nullable: false})
@@ -45,7 +45,7 @@ export class Notice {
 
     @ManyToOne(() => Category, category => category.notices)
     @JoinColumn({name: 'id_categoria'})
-    category: number;
+    category: Category;
 
     @OneToMany(() => NoticeDetails, noticeDetails => noticeDetails.notice)
     noticeDetails?: NoticeDetails[];

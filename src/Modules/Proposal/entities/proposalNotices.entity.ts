@@ -1,5 +1,5 @@
-import { Notice } from "src/Modules/Notice/entities/notice.entity";
-import { User } from "src/modules/User/entities/user.entity";
+import { Notice } from "src/Modules/notice/entities/notice.entity";
+import { User } from "src/modules/user/entities/user.entity";
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
 import { Proposal } from "./proposal.entity";
 
@@ -21,10 +21,10 @@ export class ProposalNotices {
     vc_status: string;
 
     @ManyToOne(() => Proposal, proposal => proposal.proposalNotices)
-    @JoinColumn([{name: 'id_usuarioProposta'}, {name: 'id_propostaTroca'}])
+    @JoinColumn([{name: 'id_usuarioProposta', referencedColumnName: 'id_usuarioProposta'}, {name: 'id_propostaTroca', referencedColumnName: 'id_propostaTroca'}])
     proposal: Proposal;
 
     @ManyToOne(() => Notice, notice => notice.proposalNotices)
-    @JoinColumn([{name: 'id_usuarioAnuncio'}, {name: 'id_anuncioTroca'}])
+    @JoinColumn([{name: 'id_usuarioAnuncio', referencedColumnName: 'id_usuarioAnuncio'}, {name: 'id_anuncioTroca', referencedColumnName: 'id_anuncioTroca'}])
     notice: Notice;
 }

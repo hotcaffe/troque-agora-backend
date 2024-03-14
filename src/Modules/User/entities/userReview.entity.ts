@@ -3,9 +3,6 @@ import { User } from "./user.entity";
 
 @Entity('avaliacaoUsuario')
 export class UserReview {
-    // @PrimaryGeneratedColumn()
-    // id_avaliacaoUsuario: number;
-
     @PrimaryColumn()
     id_usuario: number;
 
