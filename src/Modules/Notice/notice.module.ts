@@ -7,11 +7,14 @@ import { NoticeService } from './notice.service';
 import { User } from '../user/entities/user.entity';
 import { UserAddress } from '../user/entities/userAddress.entity';
 import { UserReview } from '../user/entities/userReview.entity';
+import { Keycloak } from 'src/Services/keycloak/keycloak';
+import { HttpModule } from '@nestjs/axios';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Notice, NoticeDetails, User, UserAddress, UserReview])],
+    imports: [TypeOrmModule.forFeature([Notice, NoticeDetails, User, UserAddress, UserReview]), HttpModule, CacheModule.register()],
     controllers: [NoticeController],
-    providers: [NoticeService]
+    providers: [NoticeService, Keycloak]
 })
 export class NoticeModule {
 }

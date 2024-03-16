@@ -157,4 +157,21 @@ export class Keycloak {
             }
         ))
     }
+
+    async introspectToken(token: string) {
+        const form = {
+            client_id: process.env.KEYCLOAK_CLIENT,
+            client_secret: process.env.KEYCLOAK_CLIENT_SECRET,
+            grant_type: "client_credentials",
+            token
+        }
+        return await lastValueFrom(this.httpService.post(this.keycloakURL + "realms/troque-agora/protocol/openid-connect/token/introspect", 
+            {...form},
+            {
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                }
+            }
+        )).then(res => res.data)
+    }
 }

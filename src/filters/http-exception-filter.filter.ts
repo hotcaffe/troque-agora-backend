@@ -1,4 +1,5 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException } from "@nestjs/common";
+import { AxiosError } from "axios";
 import { Request, Response } from "express";
 
 @Catch()
@@ -9,8 +10,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
         const request = ctx.getRequest<Request>();
         const status = exception?.getStatus && exception?.getStatus() || 500;
 
-        // console.log(exception)
-
         if (exception instanceof HttpException) {
             console.log(exception.getResponse())
             response.status(status).json({
@@ -20,6 +19,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
                     ||  exception.message
                     || 'Internal Server Error' 
             })
+        } else if (exception instanceof AxiosError) {
+            response.status(exception.response.status).json(exception.response.data)
         } else {
             response.status(status).json({
                 timestamp: new Date().toISOString(),
