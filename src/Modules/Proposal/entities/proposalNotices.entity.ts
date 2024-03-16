@@ -1,5 +1,5 @@
-import { Notice } from "src/Modules/notice/entities/notice.entity";
-import { User } from "src/modules/user/entities/user.entity";
+import { Notice } from "../../notice/entities/notice.entity";
+import { User } from "../../user/entities/user.entity";
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
 import { Proposal } from "./proposal.entity";
 

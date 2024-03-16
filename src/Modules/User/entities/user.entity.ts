@@ -1,8 +1,8 @@
 import { Column, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { UserAddress } from "./userAddress.entity";
 import { UserReview } from "./userReview.entity";
-import { Notice } from "src/Modules/notice/entities/notice.entity";
-import { Proposal } from "src/Modules/proposal/entities/proposal.entity";
+import { Notice } from "../../notice/entities/notice.entity";
+import { Proposal } from "../../proposal/entities/proposal.entity";
 
 @Entity('usuario')
 export class User {
@@ -18,8 +18,8 @@ export class User {
     @Column({type: 'int8', nullable: false})
     in_celular: number;
 
-    @Column({type: 'int2', nullable: false})
-    in_idade: number;
+    @Column("date")
+    dt_nascimento: Date;
 
     @Column({length: 254, nullable: false})
     vc_email: string;

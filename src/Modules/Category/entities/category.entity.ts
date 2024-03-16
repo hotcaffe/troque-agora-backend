@@ -1,6 +1,6 @@
-import { Notice } from "src/Modules/notice/entities/notice.entity";
-import { ProposalItem } from "src/Modules/proposal/entities/proposalItem.entity";
 import { Column, Entity, JoinColumn, ManyToOne, Not, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Notice } from "src/modules/notice/entities/notice.entity";
+import { ProposalItem } from "../../proposal/entities/proposalItem.entity";
 
 @Entity('categoria')
 export class Category {

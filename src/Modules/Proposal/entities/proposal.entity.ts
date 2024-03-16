@@ -1,5 +1,5 @@
-import { User } from "src/modules/user/entities/user.entity";
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
+import { User } from "../../user/entities/user.entity";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
 import { ProposalNotices } from "./proposalNotices.entity";
 import { ProposalItem } from "./proposalItem.entity";
 
@@ -22,11 +22,11 @@ export class Proposal {
 
     @ManyToOne(() => User, user => user.userProposals)
     @JoinColumn({name: 'id_usuarioProposta', referencedColumnName: 'id_usuario'})
-    user?: User;
+    user: User;
 
-    @OneToMany(() => ProposalNotices, proposalNotices => proposalNotices.proposal)
+    @OneToMany(() => ProposalNotices, proposalNotices => proposalNotices.proposal, {cascade: true})
     proposalNotices?: ProposalNotices[];
 
-    @OneToMany(() => ProposalItem, proposalItem => proposalItem.proposal)
+    @OneToMany(() => ProposalItem, proposalItem => proposalItem.proposal, {cascade: true})
     proposalItems?: ProposalItem[];
 }

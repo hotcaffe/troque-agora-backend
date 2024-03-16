@@ -12,6 +12,12 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigModule } from '@nestjs/config';
 import { join, resolve } from 'path';
 import { decode } from 'jsonwebtoken';
+import { Notice } from '../../notice/entities/notice.entity';
+import { NoticeDetails } from '../../notice/entities/noticeDetails.entity';
+import { Proposal } from '../../proposal/entities/proposal.entity';
+import { ProposalItem } from '../../proposal/entities/proposalItem.entity';
+import { ProposalNotices } from '../../proposal/entities/proposalNotices.entity';
+import { Category } from '../../category/entities/category.entity';
 
 describe('UserService', () => {
   let service: UserService;
@@ -55,9 +61,10 @@ describe('UserService', () => {
           username: process.env.PG_USER,
           password: process.env.PG_PASSWORD,
           entities: [join(__dirname, '..', '**', '*.entity.{ts,js}')],
-          synchronize: true
+          synchronize: true,
+          autoLoadEntities: true
         }), 
-        TypeOrmModule.forFeature([User, UserAddress, UserReview]),
+        TypeOrmModule.forFeature([User, UserAddress, UserReview, Notice, NoticeDetails, Proposal, ProposalItem, ProposalNotices, Category]),
         CacheModule.register()
       ],
       providers: [

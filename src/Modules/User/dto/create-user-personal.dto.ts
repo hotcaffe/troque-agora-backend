@@ -1,5 +1,5 @@
 import { Expose } from "class-transformer";
-import { IsNotEmpty, IsString, IsNumber } from "class-validator";
+import { IsNotEmpty, IsString, IsNumber, IsDate, IsDateString } from "class-validator";
 
 export class CreateUserPersonalDataDto {
     @IsString()
@@ -17,10 +17,10 @@ export class CreateUserPersonalDataDto {
     @Expose()
     in_celular: number;
 
-    @IsNumber()
+    @IsDateString()
     @IsNotEmpty()
     @Expose()
-    in_idade: number;
+    dt_nascimento: Date;
 
     @IsString()
     @IsNotEmpty()

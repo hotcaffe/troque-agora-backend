@@ -1,6 +1,6 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
 import { Proposal } from "./proposal.entity";
-import { Category } from "src/Modules/category/entities/category.entity";
+import { Category } from "../../category/entities/category.entity";
 
 @Entity('itemProposta')
 export class ProposalItem {
@@ -19,7 +19,7 @@ export class ProposalItem {
     @Column({length: 128, nullable: false})
     vc_descricao: string;
 
-    @Column("decimal", {nullable: false, precision: 15})
+    @Column("numeric", {nullable: false, precision: 15})
     fl_quantidade: number;
     
     @Column({length: 4, nullable: false})
