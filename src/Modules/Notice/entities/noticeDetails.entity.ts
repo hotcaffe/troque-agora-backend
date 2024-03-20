@@ -1,4 +1,3 @@
-import { User } from "src/modules/user/entities/user.entity";
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
 import { Notice } from "./notice.entity";
 
@@ -19,7 +18,7 @@ export class NoticeDetails {
     @Column({length: 128, nullable: false})
     vc_conteudo: string;
 
-    @ManyToOne(() => Notice, notice => notice.noticeDetails)
+    @ManyToOne(() => Notice, notice => notice.noticeDetails, {onDelete: 'CASCADE', onUpdate: 'CASCADE'})
     @JoinColumn([{name: 'id_usuarioAnuncio', referencedColumnName: 'id_usuarioAnuncio'}, {name: 'id_anuncioTroca', referencedColumnName: 'id_anuncioTroca'}])
     notice: Notice;
 }

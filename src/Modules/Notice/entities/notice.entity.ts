@@ -47,7 +47,7 @@ export class Notice {
     @JoinColumn({name: 'id_categoria'})
     category: Category;
 
-    @OneToMany(() => NoticeDetails, noticeDetails => noticeDetails.notice, {cascade: true})
+    @OneToMany(() => NoticeDetails, noticeDetails => noticeDetails.notice, {cascade: true, onDelete: 'CASCADE', onUpdate: 'CASCADE'})
     noticeDetails?: NoticeDetails[];
 
     @OneToMany(() => ProposalNotices, proposalNotices => proposalNotices.notice)

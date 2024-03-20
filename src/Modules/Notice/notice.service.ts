@@ -1,13 +1,11 @@
-import { Catch, HttpException, Injectable, Res } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { throwError } from "rxjs";
-import { CustomErrorHandlerService } from "src/Services/utils/error-handler.service";
 import { Notice } from "./entities/notice.entity";
-import { Not, Repository } from "typeorm";
+import {  Repository } from "typeorm";
 import { NoticeDetails } from "./entities/noticeDetails.entity";
 import { CreateNoticeDTO } from "./dto/create-notice-dto";
-import { CreateNoticeDetailsDTO } from "./dto/create-notice-details-dto";
 import { FindNoticeDTO } from "./dto/find-notice-dto";
+import { UpdateNoticeDTO } from "./dto/update-notice-dto";
 
 @Injectable()
 export class NoticeService {
@@ -62,7 +60,29 @@ export class NoticeService {
         return response
     }
 
-    async update(id_anuncioTroca, id_usuarioAnuncio, notice) {
+    async update(id_anuncioTroca: number, id_usuarioAnuncio: number, notice: UpdateNoticeDTO) {
+        const {noticeDetails, ..._notice} = notice;
 
+        noticeDetails?.forEach(async (detail) => {
+            const {id_detalheTroca, ...detailContent} = detail;
+
+            await this.noticeDetailsRepository.update({
+                id_anuncioTroca,
+                id_usuarioAnuncio,
+                id_detalheTroca
+            }, detailContent)
+        })
+
+        return await this.noticeRepository.update({
+            id_anuncioTroca,
+            id_usuarioAnuncio
+        }, _notice)
+    }
+
+    async delete(id_anuncioTroca: number, id_usuarioAnuncio: number) {
+        return await this.noticeRepository.delete({
+            id_anuncioTroca,
+            id_usuarioAnuncio
+        })
     }
 }

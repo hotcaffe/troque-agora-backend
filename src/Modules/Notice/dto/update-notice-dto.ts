@@ -1,6 +1,6 @@
 import { Expose, Type } from "class-transformer";
-import { IsArray, IsBoolean, IsBooleanString, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
-import { CreateNoticeDetailsDTO } from "./create-notice-details-dto";
+import { IsArray, IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
+import { UpdateNoticeDetailsDTO } from "./update-notice-details-dto";
 
 export class UpdateNoticeDTO {
     @IsNumber()
@@ -59,9 +59,9 @@ export class UpdateNoticeDTO {
 
     @IsArray()
     @ValidateNested({each: true})
-    @Type(() => CreateNoticeDetailsDTO)
+    @Type(() => UpdateNoticeDetailsDTO)
     @IsOptional()
     @IsNotEmpty()
     @Expose()
-    noticeDetails?: CreateNoticeDetailsDTO[];
+    noticeDetails?: UpdateNoticeDetailsDTO[];
 }
