@@ -153,6 +153,29 @@ export class Keycloak {
             {
                 headers: {
                     Authorization: `Bearer ${clientToken}`
+                },
+                params: {
+                    redirect_uri: 'http://localhost:3000/login',
+                    client_id: process.env.KEYCLOAK_CLIENT
+                }
+            }
+        ))
+    }
+
+    async resetPassword(username: string) {
+        const clientToken = await this.auth();
+        const {id} = await this.findUser(username);
+
+        return await lastValueFrom(this.httpService.put(
+            this.keycloakURL + "admin/realms/troque-agora/users/" + id + "/execute-actions-email", 
+            ["UPDATE_PASSWORD"], 
+            {
+                headers: {
+                    Authorization: `Bearer ${clientToken}`
+                },
+                params: {
+                    redirect_uri: 'http://localhost:3000/login',
+                    client_id: process.env.KEYCLOAK_CLIENT
                 }
             }
         ))

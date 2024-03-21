@@ -7,18 +7,18 @@ export class Category {
     @PrimaryGeneratedColumn()
     id_categoria?: number;
 
-    @Column({length: 32, nullable: false})
+    @Column({length: 32, nullable: false, unique: true})
     vc_titulo: string;
 
     @Column({length: 128, nullable: false})
     vc_descricao: string;
 
-    @Column({type: 'boolean', nullable: false})
+    @Column({type: 'boolean', nullable: false, default: true})
     bo_ativo: boolean;
 
-    @OneToMany(() => Notice, notices => notices.category)
+    @OneToMany(() => Notice, notices => notices.category, {onDelete: 'RESTRICT'})
     notices?: Notice[];
 
-    @OneToMany(() => ProposalItem, proposalItem => proposalItem.category)
+    @OneToMany(() => ProposalItem, proposalItem => proposalItem.category, {onDelete: 'RESTRICT'})
     proposalItem?: ProposalItem[];
 }

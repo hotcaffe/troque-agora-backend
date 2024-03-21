@@ -24,7 +24,7 @@ export class User {
     @Column({length: 254, nullable: false})
     vc_email: string;
 
-    @OneToOne(() => UserAddress, userAddress => userAddress.user)
+    @OneToOne(() => UserAddress, userAddress => userAddress.user, {cascade: true, onUpdate: 'CASCADE', onDelete: 'CASCADE'})
     userAddress?: UserAddress;
     
     @OneToOne(() => UserReview, userReview => userReview.user)

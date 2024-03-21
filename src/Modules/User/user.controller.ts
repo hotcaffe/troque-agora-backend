@@ -10,6 +10,10 @@ import {
   Query,
   ParseIntPipe,
   Res,
+  UseGuards,
+  SetMetadata,
+  Patch,
+  Request,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -18,6 +22,8 @@ import { CreateUserPersonalDataDto } from './dto/create-user-personal.dto';
 import { QueryRequired } from 'src/Decorators/query-required/query-required.decorator';
 import {Response} from 'express';
 import { Cookies } from 'src/Decorators/cookies/cookies.decorator';
+import { AuthGuard } from 'src/guards/auth.guard';
+import { UpdateUserDTO } from './dto/update-user.dto';
 
 @Controller('user')
 export class UserController {
@@ -101,11 +107,38 @@ export class UserController {
     return this.userService.findOneByUsername(username)
   }
 
-  // @Patch(':id')
-  // update(@Param('id') id_usuario: number, @Body() updateUserDto: UpdateUserDto) {
-  //   return this.userService.update(+id, updateUserDto);
-  // }
+  @Patch("/reset-password")
+  @UseGuards(AuthGuard)
+  updatePassword(
+    @Request() request: any, 
+    @Body('password') password: string
+  ) {
+    const id_usuario = request.introspected_access_token.id_usuario as number;
+    const username = request.introspected_access_token.preferred_username as string;
+    return this.userService.updatePassword(id_usuario, username, password);
+  }
 
+  @Patch(':id_usuario')
+  @UseGuards(AuthGuard)
+  @UsePipes(new ValidationPipe({transform: true, transformOptions: {excludeExtraneousValues: true}, skipUndefinedProperties: true}))
+  @SetMetadata('roles', ['rl_admin'])
+  update(@Param('id_usuario') id_usuario: number, @Body() user: UpdateUserDTO) {
+    return this.userService.update(+id_usuario, user);
+  }
+
+  @Patch()
+  @UseGuards(AuthGuard)
+  @UsePipes(new ValidationPipe({transform: true, transformOptions: {excludeExtraneousValues: true}, skipUndefinedProperties: true}))
+  updateSelf(
+    @Request() request: any, 
+    @Body() user: UpdateUserDTO
+  ) {
+    const id_usuario = request.introspected_access_token.id_usuario as number;
+    return this.userService.update(+id_usuario, user);
+  }
+
+  @UseGuards(AuthGuard)
+  @SetMetadata('roles', ['rl_admin'])
   @Delete(':username')
   remove(@Param('username') username: string) {
     return this.userService.remove(username);

@@ -3,8 +3,8 @@ import { User } from "./user.entity";
 
 @Entity('enderecoUsuario')
 export class UserAddress {
-    @PrimaryGeneratedColumn()
-    id_enderecoUsuario?: number;
+    // @PrimaryGeneratedColumn()
+    // id_enderecoUsuario?: number;
 
     @PrimaryColumn()
     id_usuario?: number;
@@ -27,7 +27,7 @@ export class UserAddress {
     @Column({length: 32, nullable: false})
     vc_estado: string;
 
-    @OneToOne(() => User, user => user.userAddress)
+    @OneToOne(() => User, user => user.userAddress, {onUpdate: 'CASCADE', onDelete: 'CASCADE'})
     @JoinColumn({name: 'id_usuario'})
     user?: User;
 }

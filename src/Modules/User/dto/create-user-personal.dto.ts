@@ -1,5 +1,6 @@
 import { Expose } from "class-transformer";
-import { IsNotEmpty, IsString, IsNumber, IsDate, IsDateString } from "class-validator";
+import { IsNotEmpty, IsString, IsNumber, IsDate, IsDateString, Validate } from "class-validator";
+import { BirthdayConstraint } from "src/class-validators/birthday-validator";
 
 export class CreateUserPersonalDataDto {
     @IsString()
@@ -20,6 +21,7 @@ export class CreateUserPersonalDataDto {
     @IsDateString()
     @IsNotEmpty()
     @Expose()
+    @Validate(BirthdayConstraint)
     dt_nascimento: Date;
 
     @IsString()

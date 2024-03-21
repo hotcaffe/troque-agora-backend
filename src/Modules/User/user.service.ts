@@ -1,6 +1,5 @@
 import { HttpException, HttpStatus, Injectable, Inject, NotFoundException, Res, ForbiddenException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import {  Repository } from 'typeorm';
@@ -8,6 +7,7 @@ import { UserAddress } from './entities/userAddress.entity';
 import { UserReview } from './entities/userReview.entity';
 import { Keycloak } from '../../Services/keycloak/keycloak';
 import {decode} from 'jsonwebtoken'
+import { UpdateUserDTO } from './dto/update-user.dto';
 
 
 @Injectable()
@@ -211,9 +211,15 @@ export class UserService {
     }
   }
 
-  // update(id: number, updateUserDto: UpdateUserDto) {
-  //   return `This action updates a #${id} user`;
-  // }
+  async update(id_usuario: number, user: UpdateUserDTO) {
+    const {userAddress, ..._user} = user;
+    await this.userAddressRepository.update({id_usuario}, userAddress);
+    return await this.userRepository.update({id_usuario}, _user);
+  }
+
+  async updatePassword(id_usuario: number, username: string, password: string) {
+    await this.keycloakService.resetPassword(username)
+  }
 
   async remove(username: string) {
     try {
