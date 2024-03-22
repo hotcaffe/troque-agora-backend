@@ -10,6 +10,10 @@ export class CreateCategoryDTO {
     vc_descricao: string;
 
     @Expose()
+    @IsString()
+    vc_icone: string;
+
+    @Expose()
     @IsBoolean()
     @IsOptional()
     bo_ativo: boolean;

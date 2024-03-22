@@ -12,6 +12,11 @@ export class UpdateCategoryDTO {
     vc_descricao: string;
 
     @Expose()
+    @IsString()
+    @IsOptional()
+    vc_icone: string;
+
+    @Expose()
     @IsBoolean()
     @IsOptional()
     bo_ativo: boolean;

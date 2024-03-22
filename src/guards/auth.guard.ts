@@ -17,6 +17,7 @@ export class AuthGuard implements CanActivate {
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
+        const response = context.switchToHttp().getResponse();
         const {access_token, refresh_token} = request.cookies;
         const roles = this.reflector.get<string[]>('roles', context.getHandler());
         const introspected_access_token = await this.keycloak.introspectToken(access_token)
@@ -24,12 +25,18 @@ export class AuthGuard implements CanActivate {
         if (introspected_access_token?.active) {
             request.introspected_access_token = introspected_access_token;
             if (roles) {
-                return this.hasRoles(roles, introspected_access_token)
+                if (this.hasRoles(roles, introspected_access_token)) {
+                    return true
+                } else {
+                    response.action = 'REDIRECT_USER'
+                    return false
+                }
             } else {
                 return true
             }
         }
         
+        response.action = 'REVOKE_SESSION'
         return false
     }
 }

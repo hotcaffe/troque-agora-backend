@@ -17,8 +17,8 @@ export class ProposalNotices {
     @PrimaryColumn()
     id_propostaTroca: number;
     
-    @Column({length: 16, nullable: false})
-    vc_status: string;
+    @Column({type: 'enum', enum: ['pending', 'rejected', 'canceled', 'accepted', 'finished'], nullable: false, default: 'pending'})
+    vc_status: 'pending' | 'rejected' | 'canceled' | 'accepted' | 'finished';
 
     @ManyToOne(() => Proposal, proposal => proposal.proposalNotices)
     @JoinColumn([{name: 'id_usuarioProposta', referencedColumnName: 'id_usuarioProposta'}, {name: 'id_propostaTroca', referencedColumnName: 'id_propostaTroca'}])

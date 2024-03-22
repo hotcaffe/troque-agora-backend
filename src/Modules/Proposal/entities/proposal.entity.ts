@@ -17,7 +17,7 @@ export class Proposal {
     @Column({length: 128, nullable: false})
     vc_descricao: string;
 
-    @Column({type: 'boolean', nullable: false})
+    @Column({type: 'boolean', nullable: false, default: true})
     bo_ativo: boolean;
 
     @ManyToOne(() => User, user => user.userProposals)

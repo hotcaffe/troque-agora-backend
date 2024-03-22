@@ -10,6 +10,9 @@ export class Category {
     @Column({length: 32, nullable: false, unique: true})
     vc_titulo: string;
 
+    @Column({length: 20, nullable: false})
+    vc_icone: string;
+
     @Column({length: 128, nullable: false})
     vc_descricao: string;
 

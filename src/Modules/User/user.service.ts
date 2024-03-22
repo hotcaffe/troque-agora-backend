@@ -58,10 +58,13 @@ export class UserService {
     try {
       return await this.keycloakService.loginUser(username, password);
     } catch (error) {
-      const isNotFullySetupMessage = error.response.data?.error_description;
-      if (isNotFullySetupMessage) {
+      const message = error.response.data?.error_description;
+      if (message == 'Account is not fully set up') {
         throw new HttpException("Antes de realizar o login, por favor, verifique seu e-mail!", HttpStatus.UNAUTHORIZED);
-      }
+      } else if (message == 'Invalid user credentials') {
+        throw new HttpException("Usuário ou senha incorretos!", HttpStatus.UNAUTHORIZED);
+      } 
+
       const status = error.response?.status || 500;
       if (status === 400 || status === 401) {
         return {access_token: "", refresh_token: ""}

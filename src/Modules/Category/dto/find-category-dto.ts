@@ -15,6 +15,11 @@ export class FindCategoryDTO {
     @Expose()
     @IsString()
     vc_descricao: string;
+   
+    @IsOptional()
+    @Expose()
+    @IsString()
+    vc_icone: string;
 
     @IsOptional()
     @Expose()
