@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from "@nestjs/common";
+import { HttpException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Proposal } from "./entities/proposal.entity";
 import { ProposalItem } from "./entities/proposalItem.entity";
@@ -8,6 +8,7 @@ import { FindProposalDTO } from "./dto/find-proposal-dto";
 import { FindProposalNoticesReceivedDTO } from "./dto/find-proposal-notices-received-dto";
 import { FindProposalNoticesSentDTO } from "./dto/find-proposal-notices-sent-dto";
 import { CreateProposalDTO } from "./dto/create-proposal-dto";
+import { UserReview } from "../user/entities/userReview.entity";
 
 
 @Injectable()
@@ -15,7 +16,8 @@ export class ProposalService {
     constructor(
         @InjectRepository(Proposal) private readonly proposalRepository: Repository<Proposal>,
         @InjectRepository(ProposalItem) private readonly proposalItemRepository: Repository<ProposalItem>,
-        @InjectRepository(ProposalNotices) private readonly proposalNoticesRepository: Repository<ProposalNotices>
+        @InjectRepository(ProposalNotices) private readonly proposalNoticesRepository: Repository<ProposalNotices>,
+        @InjectRepository(UserReview) private readonly userReviewRepository: Repository<UserReview>
     ){}
 
     async findOne(id_propostaTroca: number, id_usuarioProposta: number, relations?: string) {
@@ -155,13 +157,24 @@ export class ProposalService {
                 bo_ativo: false
             });
 
+            pendingProposalNotices.forEach(async (item) => {
+                await this.userReviewRepository.decrement({id_usuario: item.id_usuarioAnuncio}, "qt_trocasRecebidas", 1);
+                await this.updateUserReview(item.id_usuarioAnuncio)
+            })
+            await this.userReviewRepository.decrement({id_usuario: id_usuarioProposta}, "qt_trocasEnviadas", pendingProposalNotices.length);
+            await this.updateUserReview(id_usuarioProposta)
+
             return {success: "A proposta foi inteiramente cancelada!"}
         } else {
             pendingProposalNotices.forEach(async (item) => {
                 await this.proposalNoticesRepository.update(item, {
                     vc_status: 'canceled'
                 })
+                await this.userReviewRepository.decrement({id_usuario: item.id_usuarioAnuncio}, "qt_trocasRecebidas", 1);
+                await this.updateUserReview(item.id_usuarioAnuncio)
             })
+            await this.userReviewRepository.decrement({id_usuario: id_usuarioProposta}, "qt_trocasEnviadas", pendingProposalNotices.length);
+            await this.updateUserReview(id_usuarioProposta)
 
             return {success: "Apenas os itens pendentes foram cancelados!"}
         }
@@ -172,7 +185,20 @@ export class ProposalService {
 
         if (sameUser) throw new HttpException("Você não pode realizar uma proposta de troca em um anúncio que pertence a você mesmo!", 400);
 
-        return await this.proposalRepository.save({...proposal, id_usuarioProposta})
+        const newProposal = await this.proposalRepository.save({...proposal, id_usuarioProposta});
+
+        const sentCount = proposal.proposalNotices.length;
+        
+        await this.userReviewRepository.increment({id_usuario: id_usuarioProposta}, "qt_trocasEnviadas", sentCount);
+        await this.updateUserReview(id_usuarioProposta)
+
+        proposal.proposalNotices.forEach(async (item) => {
+            await this.userReviewRepository.increment({id_usuario: item.id_usuarioAnuncio}, "qt_trocasRecebidas", 1)
+            await this.updateUserReview(item.id_usuarioAnuncio)
+        })
+
+        return newProposal;
+
     }
 
     async accept(id_anuncioTroca: number, id_usuarioAnuncio: number, id_propostaTroca: number, id_usuarioProposta: number) {
@@ -201,14 +227,17 @@ export class ProposalService {
             throw new HttpException('Essa proposta já foi finalizada!', 400)            
         }
 
-        return await this.proposalNoticesRepository.update({
+        await this.proposalNoticesRepository.update({
             id_anuncioTroca,
             id_usuarioAnuncio,
             id_propostaTroca,
             id_usuarioProposta
         }, {
             vc_status: 'accepted'
-        })
+        });
+
+        await this.userReviewRepository.increment({id_usuario: id_usuarioAnuncio}, "qt_trocasAceitas", 1);
+        await this.updateUserReview(id_usuarioAnuncio)
     }
 
     async reject(id_anuncioTroca: number, id_usuarioAnuncio: number, id_propostaTroca: number, id_usuarioProposta: number) {
@@ -227,10 +256,6 @@ export class ProposalService {
             throw new HttpException('Essa proposta foi cancelada pelo interessado, portanto não poderá ser rejeitada!', 400)            
         }
 
-        if (proposalNotice.vc_status == 'accepted') {
-            throw new HttpException('Essa proposta já foi aceita!', 400)            
-        }
-
         if (proposalNotice.vc_status == 'rejected') {
             throw new HttpException('Essa proposta já foi rejeitada!', 400)            
         }
@@ -239,13 +264,72 @@ export class ProposalService {
             throw new HttpException('Essa proposta já foi finalizada!', 400)            
         }
 
-        return await this.proposalNoticesRepository.update({
+        await this.proposalNoticesRepository.update({
             id_anuncioTroca,
             id_usuarioAnuncio,
             id_propostaTroca,
             id_usuarioProposta
         }, {
             vc_status: 'rejected'
+        });
+
+        if (proposalNotice.vc_status == 'accepted') {
+            await this.userReviewRepository.decrement({id_usuario: id_usuarioAnuncio}, "qt_trocasAceitas", 1)  
+        }
+        
+        await this.userReviewRepository.increment({id_usuario: id_usuarioAnuncio}, "qt_trocasRecusadas", 1);
+        await this.updateUserReview(id_usuarioAnuncio)
+    }
+
+    async finish(id_anuncioTroca: number, id_usuarioAnuncio: number, id_propostaTroca: number, id_usuarioProposta: number) { 
+        const proposalNotice = await this.proposalNoticesRepository.findOne({
+            where: {
+                id_anuncioTroca,
+                id_usuarioAnuncio,
+                id_propostaTroca,
+                id_usuarioProposta
+            }
         })
+
+        if (proposalNotice.vc_status != 'accepted') {
+            throw new HttpException('Você não pode finalizar um acordo de uma proposta que não foi aceita!', 400)            
+        }
+
+        await this.proposalNoticesRepository.update({
+            id_anuncioTroca,
+            id_usuarioAnuncio,
+            id_propostaTroca,
+            id_usuarioProposta
+        }, {vc_status: 'finished'});
+
+        await this.userReviewRepository.increment({id_usuario: id_usuarioAnuncio}, "qt_trocasSucedidas", 1);
+        await this.userReviewRepository.increment({id_usuario: id_usuarioProposta}, "qt_trocasSucedidas", 1);
+        await this.updateUserReview(id_usuarioAnuncio);
+        await this.updateUserReview(id_usuarioProposta);
+
+        return {success: "Acordo finalizado com sucesso!"}
+    }
+
+    async updateUserReview(id_usuario: number) {
+        const userReview = await this.userReviewRepository.findOne({
+            where: {
+                id_usuario
+            }
+        })
+
+        if (!userReview) throw new NotFoundException("User not found!")
+
+        const newAvaliacaoGeral = (userReview.qt_trocasAceitas || userReview.qt_trocasEnviadas) ? 
+            userReview.qt_trocasSucedidas / (userReview.qt_trocasAceitas + userReview.qt_trocasEnviadas) : 
+            0;
+
+        await this.userReviewRepository.update(
+            {
+                id_usuario
+            },
+            {
+                tx_avaliacaoGeral: newAvaliacaoGeral
+            }
+        )
     }
 }

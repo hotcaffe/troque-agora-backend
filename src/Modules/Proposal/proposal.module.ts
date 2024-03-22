@@ -8,9 +8,10 @@ import { ProposalService } from './proposal.service';
 import { Keycloak } from 'src/Services/keycloak/keycloak';
 import { HttpModule } from '@nestjs/axios';
 import { CacheModule } from '@nestjs/cache-manager';
+import { UserReview } from '../user/entities/userReview.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Proposal, ProposalItem, ProposalNotices]), HttpModule, CacheModule.register()],
+    imports: [TypeOrmModule.forFeature([Proposal, ProposalItem, ProposalNotices, UserReview]), HttpModule, CacheModule.register()],
     controllers: [ProposalController],
     providers: [ProposalService, Keycloak]
 })

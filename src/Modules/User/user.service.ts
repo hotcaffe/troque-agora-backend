@@ -128,31 +128,6 @@ export class UserService {
     }
 
   }
-  
-  async updateAvaliacaoGeral(id_usuario: number) {
-    try {
-      const userReview = await this.userReviewRepository.findOne({
-        where: {
-          id_usuario
-        }
-      })
-
-      if (!userReview) throw new NotFoundException("User not found!")
-
-      const newAvaliacaoGeral = userReview.qt_trocasAceitas ? userReview.qt_trocasSucedidas / userReview.qt_trocasAceitas : 0;
-
-      await this.userReviewRepository.update(
-        {
-          id_usuario
-        },
-        {
-          tx_avaliacaoGeral: newAvaliacaoGeral
-        }
-      )
-    } catch (error) {
-      this.errorHandler(error)
-    }
-  }
 
   async findAll(page?: number) {
     try {
