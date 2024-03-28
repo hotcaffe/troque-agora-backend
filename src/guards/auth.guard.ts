@@ -34,6 +34,24 @@ export class AuthGuard implements CanActivate {
             } else {
                 return true
             }
+        } else {
+            if (refresh_token) {
+                const {access_token: new_access_token, refresh_token: new_refresh_token} = await this.keycloak.refreshUserSession(refresh_token);
+            
+                if (new_access_token && new_refresh_token) {
+                    response.cookie('access_token', new_access_token, {
+                    httpOnly: true
+                    })
+                    response.cookie('refresh_token', new_refresh_token, {
+                    httpOnly: true
+                    })
+            
+                    return true;
+                } else {
+                    response.action = 'REVOKE_SESSION'
+                    return false
+                }
+            }
         }
         
         response.action = 'REVOKE_SESSION'

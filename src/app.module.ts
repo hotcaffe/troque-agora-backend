@@ -15,8 +15,6 @@ import { ChatGateway } from './gateways/chat/chat.gateway';
 import { ChatModule } from './modules/chat/chat.module';
 import { MongooseModule } from '@nestjs/mongoose';
 
-console.log(process.env.MONGO_URI)
-
 @Module({
   imports: [
       ConfigModule.forRoot(),
@@ -46,6 +44,6 @@ console.log(process.env.MONGO_URI)
       ChatModule
   ],
   controllers: [AppController],
-  providers: [AppService, Keycloak, ChatGateway],
+  providers: [AppService, Keycloak],
 })
 export class AppModule {}

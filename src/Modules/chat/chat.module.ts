@@ -9,10 +9,11 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ChatSchema, Chat } from './schemas/chat.schema';
 import { ConfigModule } from '@nestjs/config';
+import { ChatGateway } from 'src/gateways/chat/chat.gateway';
 
 @Module({
   controllers: [ChatController],
-  providers: [ChatService, Keycloak],
+  providers: [ChatService, Keycloak, ChatGateway],
   imports: [
     ConfigModule.forRoot(),
     TypeOrmModule.forFeature([ProposalNotices]), 
