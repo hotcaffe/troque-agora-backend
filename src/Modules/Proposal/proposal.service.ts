@@ -211,6 +211,8 @@ export class ProposalService {
             }
         })
 
+        if (!proposalNotice) throw new HttpException("Proposta não encontrada!", 404)
+
         if (proposalNotice.vc_status == 'canceled') {
             throw new HttpException('Essa proposta foi cancelada pelo interessado, portanto não poderá ser aceitada!', 400)            
         }
@@ -290,6 +292,8 @@ export class ProposalService {
                 id_usuarioProposta
             }
         })
+
+        if (!proposalNotice) throw new HttpException("Proposta não encontrada!", 404)
 
         if (proposalNotice.vc_status != 'accepted') {
             throw new HttpException('Você não pode finalizar um acordo de uma proposta que não foi aceita!', 400)            

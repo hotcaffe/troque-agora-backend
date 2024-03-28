@@ -10,21 +10,23 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { UserModule } from './modules/user/user.module';
 import { NoticeModule } from './Modules/notice/notice.module';
 import { CategoryModule } from './Modules/category/category.module';
-import { User } from './modules/user/entities/user.entity';
-import { UserAddress } from './modules/user/entities/userAddress.entity';
-import { UserReview } from './modules/user/entities/userReview.entity';
-import { Notice } from './modules/notice/entities/notice.entity';
-import { NoticeDetails } from './modules/notice/entities/noticeDetails.entity';
-import { Category } from './modules/category/entities/category.entity';
 import { ProposalModule } from './Modules/proposal/proposal.module';
+import { ChatGateway } from './gateways/chat/chat.gateway';
+import { ChatModule } from './modules/chat/chat.module';
+import { MongooseModule } from '@nestjs/mongoose';
+
+console.log(process.env.MONGO_URI)
 
 @Module({
   imports: [
+      ConfigModule.forRoot(),
       UserModule, 
       CategoryModule, 
       NoticeModule, 
       ProposalModule,
-      HttpModule, CacheModule.register(), ConfigModule.forRoot(), TypeOrmModule.forRoot({
+      HttpModule, 
+      CacheModule.register(), 
+      TypeOrmModule.forRoot({
         type: 'postgres',
         host: process.env.PG_HOST,
         port: Number(process.env.PG_PORT),
@@ -34,9 +36,16 @@ import { ProposalModule } from './Modules/proposal/proposal.module';
         entities: [join(__dirname, '**', '*.entity.{ts,js}')],
         synchronize: true,
         autoLoadEntities: true,
-      })
+      }), 
+      MongooseModule.forRoot(process.env.MONGO_URI, {
+        auth: {
+          username: process.env.MONGO_USER,
+          password: process.env.MONGO_PASSWORD
+        }
+      }),
+      ChatModule
   ],
   controllers: [AppController],
-  providers: [AppService, Keycloak],
+  providers: [AppService, Keycloak, ChatGateway],
 })
 export class AppModule {}
