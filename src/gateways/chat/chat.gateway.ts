@@ -1,6 +1,6 @@
 import { InjectModel } from '@nestjs/mongoose';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ConnectedSocket, MessageBody, OnGatewayConnection, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { decode } from 'jsonwebtoken';
 import { Model } from 'mongoose';
 import { Server, Socket } from 'socket.io';
@@ -19,7 +19,7 @@ interface IPrivateMessage {
     origin: process.env.TA_CLIENT_WEB
   }
 })
-export class ChatGateway implements OnGatewayConnection {
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly keycloak: Keycloak,
     @InjectRepository(ProposalNotices) private readonly proposalNoticesRepository: Repository<ProposalNotices>,
@@ -56,7 +56,19 @@ export class ChatGateway implements OnGatewayConnection {
       return;
     };
 
-    client.join(id_usuario);
+    client.join(String(id_usuario));
+  }
+
+  async handleDisconnect(client: Socket) {
+    const cookies = this.getCookies(client.request.headers.cookie);
+    const token = decode(cookies.access_token) as any;
+    const id_usuario = token.id_usuario;
+
+    if (!id_usuario) {
+      return;
+    }
+
+    client.broadcast.emit("user disconnected", id_usuario)
   }
 
   @SubscribeMessage('private message')
@@ -64,6 +76,10 @@ export class ChatGateway implements OnGatewayConnection {
     const cookies = this.getCookies(client.request.headers.cookie);
     const token = decode(cookies.access_token) as any;
     const id_usuario = token.id_usuario;
+
+    if (id_usuario == to) {
+      return;
+    }
 
     const isAvailable = await this.proposalNoticesRepository.exist({
       where: [
@@ -78,18 +94,49 @@ export class ChatGateway implements OnGatewayConnection {
 
     if (!isAvailable) return;
 
-    await this.chatModel.create({
+    const received = await this.chatModel.create({
       message: content,
       user_id: id_usuario,
       recipient_id: to
     })
 
-    const message = {
-      from: id_usuario,
-      to: to,
-      message: content
-    }
+    this.server.to(id_usuario).emit("message received", received);
 
-    client.to(to).emit("private message", message);
+    client.to(String(to)).emit("private message", received);
+  }
+
+  @SubscribeMessage('private typing')
+  handlePrivateTyping(@MessageBody() {to, isTyping}: any, @ConnectedSocket() client: Socket) {
+    const cookies = this.getCookies(client.request.headers.cookie);
+    const token = decode(cookies.access_token) as any;
+    const id_usuario = token.id_usuario;
+
+    if (id_usuario == to) {
+      return;
+    }
+    
+    client.to(String(to)).emit("private typing", {from: id_usuario, isTyping})
+  }
+
+  @SubscribeMessage('read message')
+  async handleReadMessage(@MessageBody() {messages, user_id}: {messages: string[], user_id: number}, @ConnectedSocket() client: Socket) {
+    const cookies = this.getCookies(client.request.headers.cookie);
+    const token = decode(cookies.access_token) as any;
+    const id_usuario = token.id_usuario;
+
+    await this.chatModel.updateMany(
+      {
+        _id: messages,
+        recipient_id: id_usuario,
+        user_id
+      }, 
+      {
+        read: true
+      }
+    );
+
+    this.server.to(String(id_usuario)).emit("message readed", {messages, user_id})
+
+    return;
   }
 }

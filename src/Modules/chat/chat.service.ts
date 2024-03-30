@@ -8,6 +8,7 @@ import { removeDuplicates } from 'src/services/utils/remove-duplicates';
 import { Chat } from './schemas/chat.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { User } from '../user/entities/user.entity';
 
 @Injectable()
 export class ChatService {
@@ -49,7 +50,24 @@ export class ChatService {
       }
     });
 
-    return removeDuplicates(users, ['id_usuario']);
+    
+    const treatedUsers = removeDuplicates(users, ['id_usuario']) as User[];
+
+    const conversations = Promise.all(treatedUsers.map(async (user) => {
+      const chat = await this.chatModel.find({
+        $or: [
+          {user_id: user.id_usuario},
+          {recipient_id: user.id_usuario}
+        ]
+      }).sort({timestamp: 1})
+      
+      return {
+        ...user,
+        conversations: chat
+      }
+    }));
+
+    return conversations;
   }
 
   findOne(id: number) {

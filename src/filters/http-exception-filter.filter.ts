@@ -1,6 +1,7 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException } from "@nestjs/common";
 import { AxiosError } from "axios";
 import { Request, Response } from "express";
+import { QueryFailedError } from "typeorm";
 
 interface CustomResponse extends Response {
     action: string;
@@ -15,7 +16,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
         const request = ctx.getRequest<Request>();
         const status = exception?.getStatus && exception?.getStatus() || 500;
 
-
         if (exception instanceof HttpException) {
             console.log('erro', exception.getResponse(), response.action)
             response.status(status).json({
@@ -28,6 +28,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
             })
         } else if (exception instanceof AxiosError) {
             response.status(exception.response.status).json(exception.response.data)
+        } else if (exception instanceof QueryFailedError) {
+            response.status(500).json({
+                timestamp: new Date().toISOString(),
+                message: "Erro ao realizar operação de dados."
+            })
         } else {
             response.status(status).json({
                 timestamp: new Date().toISOString(),
@@ -37,6 +42,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
                     || 'Internal Server Error' 
             })
         }
+
+
 
     }
 }
