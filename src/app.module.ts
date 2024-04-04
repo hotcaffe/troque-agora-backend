@@ -14,6 +14,7 @@ import { ProposalModule } from './Modules/proposal/proposal.module';
 import { ChatGateway } from './gateways/chat/chat.gateway';
 import { ChatModule } from './modules/chat/chat.module';
 import { MongooseModule } from '@nestjs/mongoose';
+import { FirebaseModule } from './modules/firebase/firebase.module';
 
 @Module({
   imports: [
@@ -41,7 +42,8 @@ import { MongooseModule } from '@nestjs/mongoose';
           password: process.env.MONGO_PASSWORD
         }
       }),
-      ChatModule
+      ChatModule,
+      FirebaseModule
   ],
   controllers: [AppController],
   providers: [AppService, Keycloak],

@@ -1,6 +1,7 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException } from "@nestjs/common";
 import { AxiosError } from "axios";
 import { Request, Response } from "express";
+import { FirebaseError } from "firebase/app";
 import { QueryFailedError } from "typeorm";
 
 interface CustomResponse extends Response {
@@ -32,6 +33,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
             response.status(500).json({
                 timestamp: new Date().toISOString(),
                 message: "Erro ao realizar operação de dados."
+            })
+        } else if (exception instanceof FirebaseError) {
+            response.status(500).json({
+                timestamp: new Date().toISOString(),
+                message: "Erro ao realizar operações de storage."
             })
         } else {
             response.status(status).json({
