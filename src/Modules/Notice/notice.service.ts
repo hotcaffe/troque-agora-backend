@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { HttpException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Notice } from "./entities/notice.entity";
 import {  Repository } from "typeorm";
@@ -6,12 +6,14 @@ import { NoticeDetails } from "./entities/noticeDetails.entity";
 import { CreateNoticeDTO } from "./dto/create-notice-dto";
 import { FindNoticeDTO } from "./dto/find-notice-dto";
 import { UpdateNoticeDTO } from "./dto/update-notice-dto";
+import { FirebaseService } from "../firebase/firebase.service";
 
 @Injectable()
 export class NoticeService {
     constructor(
         @InjectRepository(Notice) private readonly noticeRepository: Repository<Notice>,
-        @InjectRepository(NoticeDetails) private readonly noticeDetailsRepository: Repository<NoticeDetails>
+        @InjectRepository(NoticeDetails) private readonly noticeDetailsRepository: Repository<NoticeDetails>,
+        private readonly firebaseService: FirebaseService
     ){}
 
     async findOne(id_anuncioTroca: number, id_usuarioAnuncio: number, relations: string) {
@@ -60,6 +62,16 @@ export class NoticeService {
         return response
     }
 
+    async createImages(images: Array<Express.Multer.File>, id_usuario: number, id_anuncioTroca: number) {
+        const path = '/images/notices/' + id_usuario + '/' + id_anuncioTroca;
+
+        const noticeExists = await this.findOne(id_anuncioTroca, id_usuario, '');
+        if (!noticeExists) throw new HttpException('Este anúncio não existe!', 403);
+
+        await this.firebaseService.createImages(images, path);
+        return;
+    }
+
     async update(id_anuncioTroca: number, id_usuarioAnuncio: number, notice: UpdateNoticeDTO) {
         const {noticeDetails, ..._notice} = notice;
 
@@ -77,6 +89,23 @@ export class NoticeService {
             id_anuncioTroca,
             id_usuarioAnuncio
         }, _notice)
+    }
+
+    async updateImages(imagesInserted: Array<Express.Multer.File>, imagesRemoved: string[], id_usuario: number, id_anuncioTroca: number) {
+        const path = '/images/notices/' + id_usuario + "/" + id_anuncioTroca;
+
+        const noticeExists = await this.findOne(id_anuncioTroca, id_usuario, '');
+        if (!noticeExists) throw new HttpException('Este anúncio não existe!', 403);
+
+        if (imagesRemoved.length > 0) {
+            await Promise.all(imagesRemoved.map(async (image) => await this.firebaseService.deleteImage(image, path)));
+        }
+
+        if (imagesInserted.length > 0) {
+            await this.firebaseService.createImages(imagesInserted, path);
+        }
+
+        return;
     }
 
     async delete(id_anuncioTroca: number, id_usuarioAnuncio: number) {

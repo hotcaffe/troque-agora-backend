@@ -10,11 +10,12 @@ import { UserReview } from '../user/entities/userReview.entity';
 import { Keycloak } from 'src/Services/keycloak/keycloak';
 import { HttpModule } from '@nestjs/axios';
 import { CacheModule } from '@nestjs/cache-manager';
+import { FirebaseService } from '../firebase/firebase.service';
 
 @Module({
     imports: [TypeOrmModule.forFeature([Notice, NoticeDetails, User, UserAddress, UserReview]), HttpModule, CacheModule.register()],
     controllers: [NoticeController],
-    providers: [NoticeService, Keycloak]
+    providers: [NoticeService, Keycloak, FirebaseService]
 })
 export class NoticeModule {
 }

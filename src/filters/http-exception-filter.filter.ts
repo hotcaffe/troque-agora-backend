@@ -35,6 +35,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
                 message: "Erro ao realizar operação de dados."
             })
         } else if (exception instanceof FirebaseError) {
+            console.log(exception)
             response.status(500).json({
                 timestamp: new Date().toISOString(),
                 message: "Erro ao realizar operações de storage."

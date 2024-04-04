@@ -1,9 +1,11 @@
-import { Body, Controller, Delete, Get, ParseIntPipe, Patch, Post, Query, Request, UseGuards, UsePipes, ValidationPipe } from "@nestjs/common";
+import { Body, Controller, Delete, FileTypeValidator, Get, ParseArrayPipe, ParseFilePipe, ParseIntPipe, Patch, Post, Query, Request, UploadedFiles, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from "@nestjs/common";
 import { NoticeService } from "./notice.service";
 import { CreateNoticeDTO } from "./dto/create-notice-dto";
 import { FindNoticeDTO } from "./dto/find-notice-dto";
 import { UpdateNoticeDTO } from "./dto/update-notice-dto";
 import { AuthGuard } from "src/guards/auth.guard";
+import { FileFieldsInterceptor, FilesInterceptor } from "@nestjs/platform-express";
+import { SharpPipe } from "src/pipes/sharp.pipe";
 
 @Controller('notice')
 export class NoticeController {
@@ -40,6 +42,25 @@ export class NoticeController {
     }
 
     @UseGuards(AuthGuard)
+    @Post('/images')
+    @UseInterceptors(FilesInterceptor('images'))
+    async createImages(
+        @Request() request: any, 
+        @Query('id_anuncioTroca', ParseIntPipe) id_anuncioTroca: number, 
+        @UploadedFiles(
+            new ParseFilePipe({
+                validators: [
+                    new FileTypeValidator({fileType: 'image'})
+                ]
+            }),
+            new SharpPipe()
+        ) images: Array<Express.Multer.File>
+    ) {
+        const id_usuario = request.introspected_access_token.id_usuario as number;
+        return await this.noticeService.createImages(images, id_usuario, id_anuncioTroca);
+    }
+
+    @UseGuards(AuthGuard)
     @Patch()
     @UsePipes(new ValidationPipe({transform: true, transformOptions: {excludeExtraneousValues: true}, skipUndefinedProperties: true}))
     async update(
@@ -49,6 +70,26 @@ export class NoticeController {
     ) {
         const id_usuarioAnuncio = request.introspected_access_token.id_usuario as number;
         return await this.noticeService.update(id_anuncioTroca, id_usuarioAnuncio, notice)
+    }
+
+    @UseGuards(AuthGuard)
+    @Patch('/images')
+    @UseInterceptors(FilesInterceptor('imagesInserted'))
+    async updateImages(
+        @Request() request: any, 
+        @Query('id_anuncioTroca', ParseIntPipe) id_anuncioTroca: number, 
+        @UploadedFiles(
+            new ParseFilePipe({
+                validators: [
+                    new FileTypeValidator({fileType: 'image'})
+                ]
+            }),
+            new SharpPipe()
+        ) imagesInserted: Array<Express.Multer.File>,
+        @Body('imagesRemoved', ParseArrayPipe) imagesRemoved: string[]
+    ) {
+        const id_usuario = request.introspected_access_token.id_usuario as number;
+        return await this.noticeService.updateImages(imagesInserted, imagesRemoved, id_usuario, id_anuncioTroca);
     }
 
     @UseGuards(AuthGuard)

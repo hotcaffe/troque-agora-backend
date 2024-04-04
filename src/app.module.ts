@@ -43,7 +43,7 @@ import { FirebaseModule } from './modules/firebase/firebase.module';
         }
       }),
       ChatModule,
-      FirebaseModule
+      // FirebaseModule
   ],
   controllers: [AppController],
   providers: [AppService, Keycloak],
