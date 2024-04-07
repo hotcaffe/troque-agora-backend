@@ -21,7 +21,6 @@ export class AuthGuard implements CanActivate {
         const {access_token, refresh_token} = request.cookies;
         const roles = this.reflector.get<string[]>('roles', context.getHandler());
         const introspected_access_token = await this.keycloak.introspectToken(access_token)
-        
         if (introspected_access_token?.active) {
             request.introspected_access_token = introspected_access_token;
             if (roles) {
@@ -37,7 +36,6 @@ export class AuthGuard implements CanActivate {
         } else {
             if (refresh_token) {
                 const {access_token: new_access_token, refresh_token: new_refresh_token} = await this.keycloak.refreshUserSession(refresh_token);
-            
                 if (new_access_token && new_refresh_token) {
                     response.cookie('access_token', new_access_token, {
                     httpOnly: true

@@ -11,7 +11,6 @@ interface CustomResponse extends Response {
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
     catch(exception: any, host: ArgumentsHost) {
-        console.log('deu erro')
         const ctx = host.switchToHttp();
         const response = ctx.getResponse<CustomResponse>();
         const request = ctx.getRequest<Request>();

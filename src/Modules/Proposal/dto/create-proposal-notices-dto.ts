@@ -1,5 +1,5 @@
 import { Expose } from "class-transformer";
-import { IsEnum, IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 
 
 
@@ -16,7 +16,6 @@ export class CreateProposalNoticesDTO {
 
     @IsString()
     @IsEnum(['pending', 'rejected', 'canceled', 'accepted', 'finished'])
-    @IsNotEmpty()
-    @Expose()
+    @IsOptional()
     vc_status: 'pending' | 'rejected' | 'canceled' | 'accepted' | 'finished';
 }

@@ -113,25 +113,36 @@ export class Keycloak {
             grant_type: "refresh_token",
             refresh_token
         }
-        return await lastValueFrom(this.httpService.post(this.keycloakURL + "realms/troque-agora/protocol/openid-connect/token", 
-            {...form},
-            {
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
+        try {
+            return await lastValueFrom(this.httpService.post(this.keycloakURL + "realms/troque-agora/protocol/openid-connect/token", 
+                {...form},
+                {
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    }
                 }
+            )).then(res => res.data)
+        } catch {
+            return {
+                access_token: undefined,
+                refresh_token: undefined
             }
-        )).then(res => res.data)
+        }
     }
     
     async logoutUser(sessionID: string) {
         const clientToken = await this.auth();
-        return await lastValueFrom(this.httpService.delete(this.keycloakURL + "admin/realms/troque-agora/sessions/" + sessionID, 
-            {
-                headers: {
-                    Authorization: `Bearer ${clientToken}`
+        try {
+            return await lastValueFrom(this.httpService.delete(this.keycloakURL + "admin/realms/troque-agora/sessions/" + sessionID, 
+                {
+                    headers: {
+                        Authorization: `Bearer ${clientToken}`
+                    }
                 }
-            }
-        )).then(res => res.data)
+            )).then(res => res.data)
+        } catch {
+            return;
+        }
     }
 
     async deleteUser(userID: number) {

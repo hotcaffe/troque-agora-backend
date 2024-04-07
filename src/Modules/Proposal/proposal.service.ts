@@ -193,6 +193,7 @@ export class ProposalService {
         await this.updateUserReview(id_usuarioProposta)
 
         proposal.proposalNotices.forEach(async (item) => {
+            item.vc_status = "pending"
             await this.userReviewRepository.increment({id_usuario: item.id_usuarioAnuncio}, "qt_trocasRecebidas", 1)
             await this.updateUserReview(item.id_usuarioAnuncio)
         })
