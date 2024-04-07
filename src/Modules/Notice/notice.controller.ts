@@ -34,6 +34,23 @@ export class NoticeController {
     }
 
     @UseGuards(AuthGuard)
+    @Get('/me')
+    @UsePipes(new ValidationPipe(
+        {transform: false, transformOptions: {excludeExtraneousValues: true}, skipMissingProperties: true, skipNullProperties: true, skipUndefinedProperties: true})
+    )
+    async findMe(
+        @Request() request: any,
+        @Query() where: FindNoticeDTO,
+        @Query('page') page: number,
+        @Query('take') take: number,
+        @Query('relations') relations: string
+    ) {
+        const id_usuarioAnuncio = request.introspected_access_token.id_usuario as number;
+        where.id_usuarioAnuncio = id_usuarioAnuncio;
+        return await this.noticeService.find(where, page, take, relations)
+    }
+
+    @UseGuards(AuthGuard)
     @Post()
     @UsePipes(new ValidationPipe({transform: true, transformOptions: {excludeExtraneousValues: true}}))
     async create(@Request() request: any, @Body() notice: CreateNoticeDTO) {
@@ -82,11 +99,14 @@ export class NoticeController {
             new ParseFilePipe({
                 validators: [
                     new FileTypeValidator({fileType: 'image'})
-                ]
+                ],
+                fileIsRequired: false
             }),
             new SharpPipe()
-        ) imagesInserted: Array<Express.Multer.File>,
-        @Body('imagesRemoved', ParseArrayPipe) imagesRemoved: string[]
+        ) imagesInserted?: Array<Express.Multer.File>,
+        @Body('imagesRemoved', new ParseArrayPipe({
+            optional: true
+        })) imagesRemoved?: string[]
     ) {
         const id_usuario = request.introspected_access_token.id_usuario as number;
         return await this.noticeService.updateImages(imagesInserted, imagesRemoved, id_usuario, id_anuncioTroca);

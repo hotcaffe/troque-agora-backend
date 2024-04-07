@@ -24,6 +24,7 @@ import {Response} from 'express';
 import { Cookies } from 'src/Decorators/cookies/cookies.decorator';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { UpdateUserDTO } from './dto/update-user.dto';
+import { decode } from 'jsonwebtoken';
 
 @Controller('user')
 export class UserController {
@@ -73,7 +74,11 @@ export class UserController {
             httpOnly: true
           })
           
-          return;
+          const {id_usuario, name, preferred_username, email} = decode(access_token) as any;
+          const user = {
+            id_usuario, name, preferred_username, email
+          }
+          return user
     }
 
     response.cookie('access_token', "", {
@@ -89,12 +94,21 @@ export class UserController {
   async logout(@Cookies('access_token') access_token: string, @Res({passthrough: true}) response: Response) {
     await this.userService.logout(access_token);
     response.cookie('access_token', "", {
-      maxAge: -1
+      maxAge: -1,
+      httpOnly: true
     })
 
     response.cookie('refresh_token', "", {
-      maxAge: -1
+      maxAge: -1,
+      httpOnly: true
     })
+  }
+
+  @Get('/me')
+  @UseGuards(AuthGuard)
+  async findMe(@Request() request: any) {
+    const id_usuario = request.introspected_access_token.id_usuario as number;
+    return await this.userService.findOne(id_usuario);
   }
 
   @Get(':id')

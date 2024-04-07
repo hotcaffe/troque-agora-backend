@@ -70,7 +70,7 @@ export class ProposalService {
 
     async findReceived(id_usuarioAnuncio: number, where: FindProposalNoticesReceivedDTO, page?: number, take?: number, relations?: string) {
         const _relations = relations?.split(',')?.map(rel => ({[rel.trim()]: true})) || [];
-        const {proposal, proposalDetails, notice, noticeDetails} = Object.assign({proposal: false, notice: false}, ..._relations)
+        const {proposal, proposalItems, notice, noticeDetails} = Object.assign({proposal: false, notice: false}, ..._relations)
 
         if (!page || (page - 1) < 0) {
             page = 0
@@ -86,8 +86,8 @@ export class ProposalService {
             },
             relations: {
                 proposal: proposal && {
-                    proposalItems: proposalDetails,
-                    user: proposalDetails
+                    proposalItems: proposalItems,
+                    user: proposalItems
                 },
                 notice: notice && {
                     noticeDetails: noticeDetails
@@ -98,7 +98,7 @@ export class ProposalService {
 
     async findSent(id_usuarioProposta: number, where: FindProposalNoticesSentDTO, page?: number, take?: number, relations?: string) {
         const _relations = relations?.split(',')?.map(rel => ({[rel.trim()]: true})) || [];
-        const {proposal, proposalDetails, notice, noticeDetails} = Object.assign({proposal: false, proposalDetails: false, notice: false, noticeDetails: false}, ..._relations)
+        const {proposal, proposalItems, notice, noticeDetails} = Object.assign({proposal: false, proposalItems: false, notice: false, noticeDetails: false}, ..._relations)
 
         if (!page || (page - 1) < 0) {
             page = 0
@@ -114,7 +114,7 @@ export class ProposalService {
             },
             relations: {
                 proposal: proposal && {
-                    proposalItems: proposalDetails
+                    proposalItems: proposalItems
                 },
                 notice: notice && {
                     noticeDetails: noticeDetails,

@@ -18,9 +18,9 @@ export class NoticeService {
 
     async findOne(id_anuncioTroca: number, id_usuarioAnuncio: number, relations: string) {
         const _relations = relations?.split(',')?.map(rel => ({[rel.trim()]: true})) || [];
-        const {noticeDetails, category, user} = Object.assign({noticeDetails: false, category: false, user: false}, ..._relations)
+        const {noticeDetails, category, user, userReview, userAddress} = Object.assign({noticeDetails: false, category: false, user: false, userReview: false, userAddress: false}, ..._relations)
 
-        return await this.noticeRepository.findOne({
+        const notice = await this.noticeRepository.findOne({
             where: {
                 id_anuncioTroca,
                 id_usuarioAnuncio
@@ -28,14 +28,24 @@ export class NoticeService {
             relations: {
                 noticeDetails,
                 category,
-                user
+                user: user ? {
+                    userAddress,
+                    userReview
+                } : false
             }
         })
+
+        const images = await this.firebaseService.findImages('/images/notices/' + id_usuarioAnuncio + "/" + id_anuncioTroca)
+
+        return {
+            ...notice,
+            images
+        }
     }
 
     async find(where: FindNoticeDTO, page?: number, take?: number, relations?: string) {
         const _relations = relations?.split(',')?.map(rel => ({[rel.trim()]: true})) || [];
-        const {noticeDetails, category, user} = Object.assign({noticeDetails: false, category: false, user: false}, ..._relations)
+        const {noticeDetails, category, user, userReview, userAddress} = Object.assign({noticeDetails: false, category: false, user: false, userReview: false, userAddress: false}, ..._relations)
 
         if (!page || (page - 1) < 0) {
             page = 0
@@ -44,16 +54,29 @@ export class NoticeService {
         }
         if (!take) take = 100
 
-        return await this.noticeRepository.find({
+        const notices = await this.noticeRepository.find({
             where,
             take,
             skip: (page * take),
             relations: {
                 noticeDetails,
                 category,
-                user
+                user: user ? {
+                    userAddress,
+                    userReview
+                } : false
             }
         })
+
+        const noticesFull = Promise.all(notices.map(async (notice) => {
+            const images = await this.firebaseService.findImages('/images/notices/' + notice.id_usuarioAnuncio + "/" + notice.id_anuncioTroca)
+            return {
+                ...notice,
+                images
+            }
+        }))
+
+        return noticesFull
     }
 
     async create(id_usuarioAnuncio: number, notice: CreateNoticeDTO) {
@@ -97,11 +120,11 @@ export class NoticeService {
         const noticeExists = await this.findOne(id_anuncioTroca, id_usuario, '');
         if (!noticeExists) throw new HttpException('Este anúncio não existe!', 403);
 
-        if (imagesRemoved.length > 0) {
+        if (imagesRemoved?.length > 0) {
             await Promise.all(imagesRemoved.map(async (image) => await this.firebaseService.deleteImage(image, path)));
         }
 
-        if (imagesInserted.length > 0) {
+        if (imagesInserted?.length > 0) {
             await this.firebaseService.createImages(imagesInserted, path);
         }
 

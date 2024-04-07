@@ -54,11 +54,10 @@ export class FirebaseService {
     }
 
     async createImages(images: Array<Express.Multer.File>, folder: string) {
-        const storageRef = ref(this.storage, folder + "/" + randomUUID());
-        
-        await Promise.all(images.map(async (image) => 
+        await Promise.all(images.map(async (image) => {
+            const storageRef = ref(this.storage, folder + "/" + randomUUID());
             await uploadBytes(storageRef, image.buffer, {contentType: image.mimetype, contentEncoding: image.encoding})
-        ));
+        }));
         return;
     }
 
