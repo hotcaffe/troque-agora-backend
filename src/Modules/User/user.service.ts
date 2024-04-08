@@ -222,4 +222,12 @@ export class UserService {
       this.errorHandler(error)
     }
   }
+
+  async validateDocuments(backImage: Express.Multer.File, frontImage: Express.Multer.File) {
+    return true;
+  }
+
+  async validateFace(face: Express.Multer.File) {
+    return true;
+  }
 }

@@ -14,6 +14,13 @@ import {
   SetMetadata,
   Patch,
   Request,
+  Header,
+  Headers,
+  UseInterceptors,
+  UploadedFiles,
+  ParseFilePipe,
+  FileTypeValidator,
+  ForbiddenException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -24,7 +31,9 @@ import {Response} from 'express';
 import { Cookies } from 'src/Decorators/cookies/cookies.decorator';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { UpdateUserDTO } from './dto/update-user.dto';
-import { decode } from 'jsonwebtoken';
+import { decode, sign, verify } from 'jsonwebtoken';
+import * as crypto from 'crypto'
+import { FilesInterceptor } from '@nestjs/platform-express';
 
 @Controller('user')
 export class UserController {
@@ -34,6 +43,86 @@ export class UserController {
   @UsePipes(new ValidationPipe({transform: true,transformOptions: {excludeExtraneousValues: true}}))
   async create(@Body() User: CreateUserDto, @Body() UserPersonalData: CreateUserPersonalDataDto, @Body() UserAddress: CreateUserAddressDto) {
     return await this.userService.create(User, UserPersonalData, UserAddress);
+  }
+
+  @Post('/sign')
+  @UsePipes(new ValidationPipe({transform: true, transformOptions: {excludeExtraneousValues: true}}))
+  async sign(@Body() User: CreateUserDto, @Body() UserPersonalData: CreateUserPersonalDataDto, @Body() UserAddress: CreateUserAddressDto) {
+    const body = {
+      ...User,
+      ...UserPersonalData,
+      ...UserAddress
+    }
+    const buffer = Buffer.from(JSON.stringify(body));
+    const encrypt = crypto.publicEncrypt(
+      {
+        key: process.env.TA_PUBLIC_KEY,
+        padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+        oaepHash: 'sha256'
+      }, 
+      buffer
+    )?.toString('base64')
+
+    const token = sign(encrypt, process.env.TA_PRIVATE_KEY, {algorithm: 'RS256'})
+
+    return {token};
+  }
+
+  @Post('/complete')
+  @UseInterceptors(FilesInterceptor('images'))
+  @UsePipes(new ValidationPipe({transform: true, transformOptions: {excludeExtraneousValues: true}}))
+  async complete(
+    @Headers('Authorization') token: string,
+    @UploadedFiles(
+      new ParseFilePipe({
+          validators: [
+              new FileTypeValidator({fileType: 'image'})
+          ]
+      }),
+    ) images: Array<Express.Multer.File>
+  ) {
+    const files = Object.assign({}, ...images?.map((image) => ({[image.originalname]: image}))?.flat())
+    const {backImage, frontImage, face} = files;
+
+    const isValid = this.userService.validateDocuments(backImage, frontImage) && this.userService.validateFace(face);
+
+    if (!isValid) throw new ForbiddenException("Biometria e documentos inválidos!");
+
+    const data = verify(token, process.env.TA_PUBLIC_KEY, {algorithms: ['RS256']});
+    const buffer = Buffer.from(JSON.stringify(data), 'base64');
+    const decrypt = crypto.privateDecrypt(
+      {
+        key: process.env.TA_PRIVATE_KEY,
+        padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+        oaepHash: 'sha256'
+      },
+      buffer
+    )?.toString('utf-8')
+
+    const {
+      username, 
+      password, 
+      dt_nascimento, 
+      in_celular,
+      in_cpf,
+      in_numero,
+      vc_bairro,
+      vc_cidade,
+      vc_complemento,
+      vc_email,
+      vc_estado,
+      vc_lougradouro,
+      vc_nome
+    } = JSON.parse(decrypt) as CreateUserDto & CreateUserAddressDto & CreateUserPersonalDataDto;
+    
+
+    await this.userService.create(
+      {username, password}, 
+      {dt_nascimento,in_celular,in_cpf,vc_email,vc_nome}, 
+      {in_numero,vc_bairro,vc_cidade,vc_complemento,vc_estado,vc_lougradouro}
+    )
+
+    return await this.userService.login(username, password)
   }
 
   @Get('/list')

@@ -2,6 +2,8 @@ import { ArgumentsHost, Catch, ExceptionFilter, HttpException } from "@nestjs/co
 import { AxiosError } from "axios";
 import { Request, Response } from "express";
 import { FirebaseError } from "firebase/app";
+import { JsonWebTokenError } from "jsonwebtoken";
+import { timestamp } from "rxjs";
 import { QueryFailedError } from "typeorm";
 
 interface CustomResponse extends Response {
@@ -39,7 +41,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
                 timestamp: new Date().toISOString(),
                 message: "Erro ao realizar operações de storage."
             })
-        } else {
+        } else if (exception instanceof JsonWebTokenError) {
+            response.status(403).json({
+                timestamp: new Date().toISOString(),
+                message: "Sessão inválida ou acesso indevido!"
+            })
+        } 
+        else {
             response.status(status).json({
                 timestamp: new Date().toISOString(),
                 // path: request.url,
