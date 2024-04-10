@@ -47,7 +47,7 @@ export class NoticeController {
     ) {
         const id_usuarioAnuncio = request.introspected_access_token.id_usuario as number;
         where.id_usuarioAnuncio = id_usuarioAnuncio;
-        return await this.noticeService.find(where, page, take, relations)
+        return await this.noticeService.find(where, page, take, relations, true)
     }
 
     @UseGuards(AuthGuard)

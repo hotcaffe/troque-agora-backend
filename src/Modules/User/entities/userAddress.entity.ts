@@ -3,9 +3,6 @@ import { User } from "./user.entity";
 
 @Entity('enderecoUsuario')
 export class UserAddress {
-    // @PrimaryGeneratedColumn()
-    // id_enderecoUsuario?: number;
-
     @PrimaryColumn()
     id_usuario?: number;
     

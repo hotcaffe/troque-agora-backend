@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from "@nestjs/common";
+import { HttpException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Notice } from "./entities/notice.entity";
 import {  Repository } from "typeorm";
@@ -23,7 +23,8 @@ export class NoticeService {
         const notice = await this.noticeRepository.findOne({
             where: {
                 id_anuncioTroca,
-                id_usuarioAnuncio
+                id_usuarioAnuncio,
+                bo_ativo: true
             },
             relations: {
                 noticeDetails,
@@ -35,6 +36,8 @@ export class NoticeService {
             }
         })
 
+        if (!notice) throw new NotFoundException("Anuncio não encontrado!");
+
         const images = await this.firebaseService.findImages('/images/notices/' + id_usuarioAnuncio + "/" + id_anuncioTroca)
 
         return {
@@ -43,7 +46,7 @@ export class NoticeService {
         }
     }
 
-    async find(where: FindNoticeDTO, page?: number, take?: number, relations?: string) {
+    async find(where: FindNoticeDTO, page?: number, take?: number, relations?: string, inactives?: boolean) {
         const _relations = relations?.split(',')?.map(rel => ({[rel.trim()]: true})) || [];
         const {noticeDetails, category, user, userReview, userAddress} = Object.assign({noticeDetails: false, category: false, user: false, userReview: false, userAddress: false}, ..._relations)
 
@@ -55,7 +58,10 @@ export class NoticeService {
         if (!take) take = 100
 
         const notices = await this.noticeRepository.find({
-            where,
+            where: inactives ? where : {
+                ...where,
+                bo_ativo: true
+            },
             take,
             skip: (page * take),
             relations: {
