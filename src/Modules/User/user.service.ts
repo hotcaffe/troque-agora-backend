@@ -155,9 +155,13 @@ export class UserService {
     }
   }
 
+  async findKeycloakUser(email: string) {
+    return await this.keycloakService.findUserByEmail(email)
+  }
+
   async findOne(id_usuario: number) {
     try {
-      return await this.userRepository.findOne({
+      const user = await this.userRepository.findOne({
         where: {
           id_usuario
         },
@@ -166,6 +170,10 @@ export class UserService {
           userReview: true
         }
       })
+
+      if (!user) throw new NotFoundException("Usuário não encontrado!")
+
+      return user;
     } catch (error) {
       this.errorHandler(error);
     }
@@ -175,7 +183,7 @@ export class UserService {
     try {
       const id_usuario = await this.keycloakService.findUser(username).then(res => res?.attributes?.id_usuario[0]);
       if (!id_usuario) throw new NotFoundException("Usuário não encontrado!");
-      return await this.userRepository.findOne({
+      const user = await this.userRepository.findOne({
         where: {
           id_usuario
         },
@@ -184,6 +192,10 @@ export class UserService {
           userReview: true
         }
       })
+
+      if (!user) throw new NotFoundException("Usuário não encontrado!")
+
+      return user;
     } catch (error) {
       this.errorHandler(error);
     }
@@ -195,7 +207,7 @@ export class UserService {
     return await this.userRepository.update({id_usuario}, _user);
   }
 
-  async updatePassword(id_usuario: number, username: string, password: string) {
+  async updatePassword(username: string) {
     await this.keycloakService.resetPassword(username)
   }
 

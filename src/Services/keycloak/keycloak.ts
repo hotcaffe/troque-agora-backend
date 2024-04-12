@@ -88,6 +88,17 @@ export class Keycloak {
         )).then(res => res.data[0])
     }
 
+    async findUserByEmail(email: string) {
+        const clientToken = await this.auth();
+        return await lastValueFrom(this.httpService.get(this.keycloakURL + "admin/realms/troque-agora/users?" + `email=${email}&exact=true`, 
+            {
+                headers: {
+                    Authorization: `Bearer ${clientToken}`
+                }
+            }
+        ))?.then(res => res?.data[0])       
+    }
+
     async loginUser(username: string, password: string) {
         const form = {
             client_id: process.env.KEYCLOAK_CLIENT,

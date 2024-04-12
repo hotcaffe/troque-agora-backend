@@ -200,12 +200,24 @@ export class UserController {
     return await this.userService.findOne(id_usuario);
   }
 
+  @Get("/forgot-password")
+  async forgotPassword(
+    @Query('email') email
+  ) {
+    if (!email) return;
+    const username = await this.userService.findKeycloakUser(email).then(res => res?.username);
+    if (!username) return;
+    return this.userService.updatePassword(username)
+  }
+
   @Get(':id')
+  @UseGuards(AuthGuard)
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return await this.userService.findOne(id);
   }
 
   @Get()
+  @UseGuards(AuthGuard)
   findByUsername(@QueryRequired('username') username: string) {
     return this.userService.findOneByUsername(username)
   }
@@ -213,12 +225,10 @@ export class UserController {
   @Patch("/reset-password")
   @UseGuards(AuthGuard)
   updatePassword(
-    @Request() request: any, 
-    @Body('password') password: string
+    @Request() request: any
   ) {
-    const id_usuario = request.introspected_access_token.id_usuario as number;
     const username = request.introspected_access_token.preferred_username as string;
-    return this.userService.updatePassword(id_usuario, username, password);
+    return this.userService.updatePassword(username);
   }
 
   @Patch(':id_usuario')
