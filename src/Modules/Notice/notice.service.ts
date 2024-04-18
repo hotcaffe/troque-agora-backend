@@ -87,7 +87,6 @@ export class NoticeService {
 
     async create(id_usuarioAnuncio: number, notice: CreateNoticeDTO) {
         const response = await this.noticeRepository.save({...notice, id_usuarioAnuncio});
-
         return response
     }
 

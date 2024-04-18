@@ -55,6 +55,7 @@ export class NoticeController {
     @UsePipes(new ValidationPipe({transform: true, transformOptions: {excludeExtraneousValues: true}}))
     async create(@Request() request: any, @Body() notice: CreateNoticeDTO) {
         const id_usuario = request.introspected_access_token.id_usuario as number;
+        notice.bo_ativo = true
         return await this.noticeService.create(id_usuario, notice); 
     }
 

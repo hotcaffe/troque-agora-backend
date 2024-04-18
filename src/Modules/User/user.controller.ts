@@ -34,6 +34,7 @@ import { UpdateUserDTO } from './dto/update-user.dto';
 import { decode, sign, verify } from 'jsonwebtoken';
 import * as crypto from 'crypto'
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { IsBooleanString } from 'class-validator';
 
 @Controller('user')
 export class UserController {
@@ -135,9 +136,11 @@ export class UserController {
     @Cookies('refresh_token') refresh_token_cookie: string,
     @QueryRequired('username') username: string, 
     @QueryRequired('password') password: string, 
+    @Query('keepSession', {
+      transform: (value) => value === "true"
+    }) keepSession: boolean,
     @Res({passthrough: true}) response: Response
   ) {
-
     if (refresh_token_cookie) {
       const {access_token: new_access_token, refresh_token: new_refresh_token} = await this.userService.refreshSession(refresh_token_cookie)
   
@@ -159,9 +162,12 @@ export class UserController {
           response.cookie('access_token', access_token, {
             httpOnly: true
           })
-          response.cookie('refresh_token', refresh_token, {
-            httpOnly: true
-          })
+
+          if (keepSession) {
+            response.cookie('refresh_token', refresh_token, {
+              httpOnly: true
+            })
+          }
           
           const {id_usuario, name, preferred_username, email} = decode(access_token) as any;
           const user = {
