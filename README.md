@@ -18,7 +18,7 @@ yarn start:dev
 
 ## Dependências externas
 
-Para garantir o funcionamento da maior parte das rotas, essa API se comunica com três aplicações.
+Para garantir o funcionamento da maior parte das rotas, essa API se comunica com quatro aplicações.
 
 - PostgreSQL
 - MongoDB 
